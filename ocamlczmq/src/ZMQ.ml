@@ -64,17 +64,17 @@ external zctx_hwm : zctx -> int = "caml_zctx_hwm"
 type zsocket
 
 type zsocket_type  =
-	| ZMQ_PAIR   (*  0 *)
-	| ZMQ_PUB    (*  1 *)
-	| ZMQ_SUB    (*  2 *)
-	| ZMQ_REQ    (*  3 *)
-	| ZMQ_REP    (*  4 *)
-	| ZMQ_DEALER (*  5 *)
-	| ZMQ_ROUTER (*  6 *)
-	| ZMQ_PULL   (*  7 *)
-	| ZMQ_PUSH   (*  8 *)
-	| ZMQ_XPUB   (*  9 *)
-	| ZMQ_XSUB   (* 10 *)
+  | ZMQ_PAIR   (*  0 *)
+  | ZMQ_PUB    (*  1 *)
+  | ZMQ_SUB    (*  2 *)
+  | ZMQ_REQ    (*  3 *)
+  | ZMQ_REP    (*  4 *)
+  | ZMQ_DEALER (*  5 *)
+  | ZMQ_ROUTER (*  6 *)
+  | ZMQ_PULL   (*  7 *)
+  | ZMQ_PUSH   (*  8 *)
+  | ZMQ_XPUB   (*  9 *)
+  | ZMQ_XSUB   (* 10 *)
 
 (* Create a new socket within our CZMQ context *)
 external zsocket_new : zctx -> zsocket_type -> zsocket = "caml_zsocket_new"
@@ -130,7 +130,7 @@ external zframe_getbytes : zframe -> char array = "caml_zframe_getbytes"
 external zframe_recv : zsocket -> zframe = "caml_zframe_recv"
 
 (*  Send a frame to a socket, destroy frame after sending. Returns
-	non-zero error code on failure *)
+    	non-zero error code on failure *)
 external zframe_send : zframe -> zsocket -> int -> int = "caml_zframe_send"
 
 (*  Return number of bytes in frame data *)
@@ -143,7 +143,7 @@ external zframe_dup : zframe -> zframe = "caml_zframe_dup"
 external zframe_strhex : zframe -> string = "caml_zframe_strhex"
 
 (*  Return frame data copied into freshly allocated string.
-  Binary strings are supported. *)
+    Binary strings are supported. *)
 external zframe_strdup : zframe -> string = "caml_zframe_strdup"
 
 (*  Return true if frame body is equal to string, excluding terminator *)
@@ -197,22 +197,22 @@ external zmsg_pop : zmsg -> zframe = "caml_zmsg_pop"
 external zmsg_add : zmsg -> zframe -> int = "caml_zmsg_add"
 
 (** Push string as new frame to front of message. Binary strings are supported.
-  Returns 0 on success, -1 on error *)
+    Returns 0 on success, -1 on error *)
 external zmsg_pushstr : zmsg -> string -> int = "caml_zmsg_pushstr"
 
 (** Push string as new frame to front of message. Binary strings are supported.
-  Returns 0 on success, -1 on error. This duplicates zmsg_pushstr and can be deleted.*)
+    Returns 0 on success, -1 on error. This duplicates zmsg_pushstr and can be deleted.*)
 external zmsg_pushbstr : zmsg -> string -> int -> int = "caml_zmsg_pushbstr"
 
 (* Push string as new frame to end of message.
-	Returns 0 on success, -1 on error *)
+   	Returns 0 on success, -1 on error *)
 external zmsg_addstr : zmsg -> string -> int = "caml_zmsg_addstr"
 
 (* Pop frame off front of message, return as fresh string *)
 external zmsg_popstr : zmsg -> string = "caml_zmsg_popstr"
 
 (* Push frame to front of message, before first frame.
-	Pushes an empty frame in front of frame *)
+   	Pushes an empty frame in front of frame *)
 external zmsg_wrap : zmsg -> zframe -> unit = "caml_zmsg_wrap"
 
 (* Pop frame off front of message *)
@@ -243,64 +243,64 @@ let selftest () =
   let pub_sock = zsocket_new ctx ZMQ_PUB in
   let rc = zsocket_bind pub_sock "tcp://*:5556" in
   if rc < 0 then raise SocketBindFailure else
-  let sub_sock = (zsocket_new ctx ZMQ_SUB) in 
-  let rc = zsocket_connect sub_sock "tcp://localhost:5556" in
-  if rc < 0 then raise SocketConnectFailure else
-  zsocket_set_subscribe sub_sock "TEST";
-  (* PUSH, PULL *)
-  let push_sock = zsocket_new ctx ZMQ_PUSH in
-  let rc = zsocket_connect push_sock "tcp://localhost:5557" in
-  if rc < 0 then raise SocketConnectFailure else
-  let pull_sock = (zsocket_new ctx ZMQ_PULL) in 
-  let rc = zsocket_bind pull_sock "tcp://*:5557" in
-  if rc < 0 then raise SocketBindFailure else
-  print_endline "Sockets connected";
-  
-  let sent = ref 0 in
-  let recvd = ref 0 in 
-  let rec recv sock msgs = 
-    let m = zmsg_recv_nowait sock in
-    if ((zmsg_size m) = 0) then
-      msgs
-    else 
-      m :: recv sock msgs
-  in
-  let rec handle_pull msgs =
-    (match msgs with 
-      []   -> ()
-    | h::t -> ignore(zmsg_send h pub_sock); handle_pull t)
-    (*print_endline ((string_of_int rc ) ^ " Message sent over push");*)
-  in
-  let rec handle_sub msgs recvd = 
-    (match msgs with 
-      []   -> ()
-    | h::t -> 
-          recvd := ((!recvd) + 1);
-          handle_sub t recvd;)
-  in
-  for i = 0 to 1000 do 
-    (* send new message over push socket *)
-    let z = zmsg_new () in
-    ignore(zmsg_pushstr z "TEST");
-    ignore(zmsg_send z push_sock); 
-    sent := !sent + 1;
-    (* recv on pull *)
-    let msgs = recv pull_sock [] in
-    (*print_endline ("pull received " ^ (string_of_int (List.length msgs)) ^ " messages");*)
-    handle_pull msgs;
-    (* recv on sub *)
-    let msgs = recv sub_sock [] in
-    handle_sub msgs recvd;
-  done;
-  (* clean up *)
-  print_endline "Cleaning up";
-  let ctx = 0 in ignore(ctx);
-  let pub_sock = 0 in ignore(pub_sock);
-  let sub_sock = 0 in ignore(sub_sock);
-  let push_sock = 0 in ignore(push_sock);
-  let pull_sock = 0 in ignore(pull_sock);
-  Gc.full_major ();
-  print_endline "Done";
-  print_endline "Results:";
-  print_endline ("\t" ^ (string_of_int !sent) ^ " messages sent; " ^ (string_of_int !recvd) ^ " received.");
+    let sub_sock = (zsocket_new ctx ZMQ_SUB) in 
+    let rc = zsocket_connect sub_sock "tcp://localhost:5556" in
+    if rc < 0 then raise SocketConnectFailure else
+      zsocket_set_subscribe sub_sock "TEST";
+    (* PUSH, PULL *)
+    let push_sock = zsocket_new ctx ZMQ_PUSH in
+    let rc = zsocket_connect push_sock "tcp://localhost:5557" in
+    if rc < 0 then raise SocketConnectFailure else
+      let pull_sock = (zsocket_new ctx ZMQ_PULL) in 
+      let rc = zsocket_bind pull_sock "tcp://*:5557" in
+      if rc < 0 then raise SocketBindFailure else
+        print_endline "Sockets connected";
+
+      let sent = ref 0 in
+      let recvd = ref 0 in 
+      let rec recv sock msgs = 
+        let m = zmsg_recv_nowait sock in
+        if ((zmsg_size m) = 0) then
+          msgs
+        else 
+          m :: recv sock msgs
+      in
+      let rec handle_pull msgs =
+        (match msgs with 
+           []   -> ()
+         | h::t -> ignore(zmsg_send h pub_sock); handle_pull t)
+        (*print_endline ((string_of_int rc ) ^ " Message sent over push");*)
+      in
+      let rec handle_sub msgs recvd = 
+        (match msgs with 
+           []   -> ()
+         | h::t -> 
+           recvd := ((!recvd) + 1);
+           handle_sub t recvd;)
+      in
+      for i = 0 to 1000 do 
+        (* send new message over push socket *)
+        let z = zmsg_new () in
+        ignore(zmsg_pushstr z "TEST");
+        ignore(zmsg_send z push_sock); 
+        sent := !sent + 1;
+        (* recv on pull *)
+        let msgs = recv pull_sock [] in
+        (*print_endline ("pull received " ^ (string_of_int (List.length msgs)) ^ " messages");*)
+        handle_pull msgs;
+        (* recv on sub *)
+        let msgs = recv sub_sock [] in
+        handle_sub msgs recvd;
+      done;
+      (* clean up *)
+      print_endline "Cleaning up";
+      let ctx = 0 in ignore(ctx);
+      let pub_sock = 0 in ignore(pub_sock);
+      let sub_sock = 0 in ignore(sub_sock);
+      let push_sock = 0 in ignore(push_sock);
+      let pull_sock = 0 in ignore(pull_sock);
+      Gc.full_major ();
+      print_endline "Done";
+      print_endline "Results:";
+      print_endline ("\t" ^ (string_of_int !sent) ^ " messages sent; " ^ (string_of_int !recvd) ^ " received.");
 ;;

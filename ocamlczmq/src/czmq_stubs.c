@@ -90,7 +90,7 @@ void caml_czmq_finalize_zctx(value context_val)
 }
 
 static struct custom_operations caml_czmq_zctx_ops = {
-    identifier:     "org.czmq.zctx",
+    identifier:     "org.czmq./ctx",
     finalize:       caml_czmq_finalize_zctx,
     compare:        custom_compare_default,
     hash:           custom_hash_default,
