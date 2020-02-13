@@ -65,25 +65,25 @@ void caml_zmq_raise_if(int condition) {
 }
 
 /******************
- *  zsocket       *
+ *  zsock         *
  ******************/
 
-// a socket type containing a zsocket pointer
+// a socket type containing a zsock pointer
  typedef struct _socket_st {
     void *socket;
 } socket_st;
 
-#define CAML_CZMQ_zsocket_val(v) (socket_st *) Data_custom_val(v)
+#define CAML_CZMQ_zsock_val(v) (socket_st *) Data_custom_val(v)
 
 void caml_czmq_finalize_zsock(value socket_val)
 {
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
 
     zsock_destroy(socket_record->socket);
 }
 
-static struct custom_operations caml_czmq_zsocket_ops = {
-    identifier:     "org.czmq.zsocket",
+static struct custom_operations caml_czmq_zsock_ops = {
+    identifier:     "org.czmq.zsock",
     finalize:       caml_czmq_finalize_zsock,
     compare:        custom_compare_default,
     hash:           custom_hash_default,
@@ -91,11 +91,11 @@ static struct custom_operations caml_czmq_zsocket_ops = {
     deserialize:    custom_deserialize_default
 };
 
-static value caml_czmq_copy_zsocket( socket_st *socket_record ) {
+static value caml_czmq_copy_zsock( socket_st *socket_record ) {
     CAMLparam0 ();
     CAMLlocal1 (socket_val);
 
-    socket_val = caml_alloc_custom(&caml_czmq_zsocket_ops, sizeof(socket_st), 0, 1);
+    socket_val = caml_alloc_custom(&caml_czmq_zsock_ops, sizeof(socket_st), 0, 1);
     memcpy( Data_custom_val(socket_val), socket_record, sizeof(socket_st) );
     
     CAMLreturn (socket_val);
@@ -112,10 +112,10 @@ caml_zsock_new(value type_val)
     // create socket
     void *socket = zsock_new ( type );
     assert (socket);
-    // return structure of zsocket pointer
+    // return structure of zsock pointer
     socket_st socket_record;
     socket_record.socket = socket;
-    socket_val = caml_czmq_copy_zsocket(&socket_record);
+    socket_val = caml_czmq_copy_zsock(&socket_record);
     
     CAMLreturn (socket_val);
 }
@@ -125,7 +125,7 @@ caml_zsock_bind(value socket_val, value address_val)
 {
     CAMLparam2 (socket_val, address_val);
 
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     char *address = String_val(address_val);
     int rc = zsock_bind(socket_record->socket, address);
     
@@ -137,38 +137,33 @@ caml_zsock_connect(value socket_val, value address_val)
 {
     CAMLparam2 (socket_val, address_val);
 
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     char *address = String_val(address_val);
     int rc = zsock_connect(socket_record->socket, address);
 
     CAMLreturn (Val_int(rc));
 }
 
-/******************
- *  zsocketopt  *
- ******************/
-
 CAMLprim value 
-caml_zsocket_set_subscribe(value socket_val, value string_val)
+caml_zsock_set_subscribe(value socket_val, value string_val)
 {
     CAMLparam2 (socket_val, string_val);
 
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     char *string = String_val(string_val);
-    zsocket_set_subscribe(socket_record->socket, string);
+    zsock_set_subscribe(socket_record->socket, string);
 
     CAMLreturn (Val_unit);
 }
 
-
 CAMLprim value 
-caml_zsocket_set_unsubscribe(value socket_val, value string_val)
+caml_zsock_set_unsubscribe(value socket_val, value string_val)
 {
     CAMLparam2 (socket_val, string_val);
 
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     char *string = String_val(string_val);
-    zsocket_set_unsubscribe(socket_record->socket, string);
+    zsock_set_unsubscribe(socket_record->socket, string);
 
     CAMLreturn (Val_unit);
 }
@@ -184,7 +179,7 @@ caml_zstr_recv(value socket_val)
     CAMLparam1 (socket_val);
     CAMLlocal1 (string_val);
     
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     char *string = zstr_recv(socket_record->socket);
     string_val = caml_copy_string(string);
     free(string);
@@ -198,7 +193,7 @@ caml_zstr_recv_nowait(value socket_val)
     CAMLparam1 (socket_val);
     CAMLlocal1 (string_val);
     
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     char *string = zstr_recv_nowait(socket_record->socket);
     if (string) {
         string_val = caml_copy_string(string);
@@ -215,7 +210,7 @@ caml_zstr_send(value socket_val, value string_val)
 {
     CAMLparam2 (socket_val, string_val);
     
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     char *string = String_val(string_val);
     int rc = zstr_send(socket_record->socket, string);
 
@@ -227,7 +222,7 @@ caml_zstr_sendm(value socket_val, value string_val)
 {
     CAMLparam2 (socket_val, string_val);
     
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     char *string = String_val(string_val);
     int rc = zstr_sendm(socket_record->socket, string);
 
@@ -314,7 +309,7 @@ caml_zframe_recv(value socket_val)
     CAMLparam1 (socket_val);
     CAMLlocal1 (frame_val);
 
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     void *frame = zframe_recv(socket_record->socket);
     caml_zmq_raise_if(frame == NULL);
     frame_val = caml_czmq_copy_zframe(&frame);
@@ -327,7 +322,7 @@ caml_zframe_send(value frame_val, value socket_val, value flags_val)
 {
     CAMLparam3 (frame_val, socket_val, flags_val);
     
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     zframe_t *frame = CAML_CZMQ_zframe_val(frame_val);
     int flags = Int_val(flags_val);
     int rc = zframe_send(&frame, socket_record->socket, flags);
@@ -507,7 +502,7 @@ caml_zmsg_recv(value socket_val)
     CAMLparam1 (socket_val);
     CAMLlocal1 (msg_val);
 
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     zmsg_t *msg = zmsg_recv(socket_record->socket);
     if (! msg) caml_failwith("break");
     msg_val = caml_czmq_copy_zmsg(&msg);
@@ -521,7 +516,7 @@ caml_zmsg_recv_nowait(value socket_val)
     CAMLparam1 (socket_val);
     CAMLlocal1 (msg_val);
 
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     assert (socket_record->socket);
     zmsg_t *self = zmsg_new ();
     assert (self);
@@ -559,7 +554,7 @@ caml_zmsg_send(value msg_val, value socket_val)
 {
     CAMLparam2 (msg_val, socket_val);
     
-    socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
+    socket_st *socket_record = CAML_CZMQ_zsock_val(socket_val);
     // send a copy of msg, which is destroyed
     zmsg_t *msg = CAML_CZMQ_zmsg_val(msg_val);
     zmsg_t *msg_copy = zmsg_dup(msg);

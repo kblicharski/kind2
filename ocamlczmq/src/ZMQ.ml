@@ -53,7 +53,7 @@ type zsock_type  =
   | ZMQ_XSUB   (* 10 *)
   | ZMQ_STREAM (* 11 *)
 
-(* Create a new socket within our CZMQ context *)
+(* Create a new socket *)
 external zsock_new : zsock_type -> zsock = "caml_zsock_new"
 
 (* Connect socket to address *)
@@ -61,16 +61,13 @@ external zsock_bind : zsock -> string -> int = "caml_zsock_bind"
 
 (* Connect a socket to a formatted endpoint. Returns 0 if OK, -1 if the endpoint was invalid *)
 external zsock_connect : zsock -> string -> int = "caml_zsock_connect"
-(* int zsock_connect (zsock_t *self, const char *format, ...) CHECK_PRINTF (2); *)
-
-(************************)
-(* zsocketopt           *)
-(************************)
 
 (* Subscribe SUB socket *)
-external zsocket_set_subscribe : zsock -> string -> unit = "caml_zsocket_set_subscribe"
+external zsock_set_subscribe : zsock -> string -> unit = "caml_zsock_set_subscribe"
+
 (* Unsubscribe SUB socket *)
-external zsocket_set_unsubscribe : zsock -> string -> unit = "caml_zsocket_set_unsubscribe"
+(* Currently unused? *)
+external zsock_set_unsubscribe : zsock -> string -> unit = "caml_zsock_set_unsubscribe"
 
 
 (************************)
@@ -222,7 +219,7 @@ let selftest () =
     let sub_sock = (zsock_new ZMQ_SUB) in 
     let rc = zsock_connect sub_sock "tcp://localhost:5556" in
     if rc < 0 then raise SocketConnectFailure else
-      zsocket_set_subscribe sub_sock "TEST";
+      zsock_set_subscribe sub_sock "TEST";
     (* PUSH, PULL *)
     let push_sock = zsock_new ZMQ_PUSH in
     let rc = zsock_connect push_sock "tcp://localhost:5557" in

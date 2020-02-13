@@ -143,7 +143,7 @@ struct
 
                
   (* ZeroMQ socket *)
-  type socket = ZMQ.zsocket
+  type socket = ZMQ.zsock
 
                   
   (* Background thread *)
@@ -1238,8 +1238,8 @@ struct
 
       (
 
-        zsocket_set_subscribe sub_sock "CONTROL";
-        zsocket_set_subscribe sub_sock "RELAY";
+        zsock_set_subscribe sub_sock "CONTROL";
+        zsock_set_subscribe sub_sock "RELAY";
 
         (* create push socket for sending updates to the invariant manager *)
         let push_sock = zsock_new ZMQ_PUSH in 
