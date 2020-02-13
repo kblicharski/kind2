@@ -54,13 +54,13 @@ type zsock_type  =
   | ZMQ_STREAM (* 11 *)
 
 (* Create a new socket within our CZMQ context *)
-external zsocket_new : zsock_type -> zsock = "caml_zsocket_new"
+external zsock_new : zsock_type -> zsock = "caml_zsock_new"
 
 (* Connect socket to address *)
 external zsock_bind : zsock -> string -> int = "caml_zsock_bind"
 
 (* Connect a socket to a formatted endpoint. Returns 0 if OK, -1 if the endpoint was invalid *)
-external zsocket_connect : zsock -> string -> int = "caml_zsocket_connect"
+external zsock_connect : zsock -> string -> int = "caml_zsock_connect"
 (* int zsock_connect (zsock_t *self, const char *format, ...) CHECK_PRINTF (2); *)
 
 (************************)
@@ -214,21 +214,20 @@ exception No_value
 
 (* Selftest of ZMQ module *)
 let selftest () =
-  (* create sockets and contexts *)
-  let ctx = zctx_new() in
+  (* create sockets *)
   (* PUB, SUB *)
-  let pub_sock = zsocket_new ctx ZMQ_PUB in
+  let pub_sock = zsock_new ZMQ_PUB in
   let rc = zsock_bind pub_sock "tcp://*:5556" in
   if rc < 0 then raise SocketBindFailure else
-    let sub_sock = (zsocket_new ctx ZMQ_SUB) in 
-    let rc = zsocket_connect sub_sock "tcp://localhost:5556" in
+    let sub_sock = (zsock_new ZMQ_SUB) in 
+    let rc = zsock_connect sub_sock "tcp://localhost:5556" in
     if rc < 0 then raise SocketConnectFailure else
       zsocket_set_subscribe sub_sock "TEST";
     (* PUSH, PULL *)
-    let push_sock = zsocket_new ctx ZMQ_PUSH in
-    let rc = zsocket_connect push_sock "tcp://localhost:5557" in
+    let push_sock = zsock_new ZMQ_PUSH in
+    let rc = zsock_connect push_sock "tcp://localhost:5557" in
     if rc < 0 then raise SocketConnectFailure else
-      let pull_sock = (zsocket_new ctx ZMQ_PULL) in 
+      let pull_sock = (zsock_new ZMQ_PULL) in 
       let rc = zsock_bind pull_sock "tcp://*:5557" in
       if rc < 0 then raise SocketBindFailure else
         print_endline "Sockets connected";
@@ -271,7 +270,6 @@ let selftest () =
       done;
       (* clean up *)
       print_endline "Cleaning up";
-      let ctx = 0 in ignore(ctx);
       let pub_sock = 0 in ignore(pub_sock);
       let sub_sock = 0 in ignore(sub_sock);
       let push_sock = 0 in ignore(push_sock);

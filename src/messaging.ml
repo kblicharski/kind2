@@ -1185,10 +1185,9 @@ struct
   let init_im () =
 
     (* sockets for communication with worker processes *)
-    let bg_ctx = zctx_new () in
 
     (* pub socket to send updates to workers *)
-    let pub_sock = zsocket_new bg_ctx ZMQ_PUB in
+    let pub_sock = zsock_new ZMQ_PUB in
     let bcast_port = zsock_bind pub_sock "tcp://127.0.0.1:*" in
 
     if bcast_port < 0 then raise SocketBindFailure else
@@ -1196,7 +1195,7 @@ struct
       (
 
         (* pull socket to get updates from workers *)
-        let pull_sock = (zsocket_new bg_ctx ZMQ_PULL) in 
+        let pull_sock = (zsock_new ZMQ_PULL) in 
         let push_port = zsock_bind pull_sock "tcp://127.0.0.1:*" in
 
         if push_port < 0 then raise SocketBindFailure else
@@ -1225,13 +1224,12 @@ struct
   let init_worker proc bcast_port push_port = 
 
     (* sockets for communication with invariant manager *)
-    let bg_ctx = zctx_new () in
 
     (* subscribe to updates from invariant manager *)
-    let sub_sock = zsocket_new bg_ctx ZMQ_SUB in
+    let sub_sock = zsock_new ZMQ_SUB in
 
     let rc = 
-      zsocket_connect 
+      zsock_connect 
         sub_sock 
         bcast_port
     in
@@ -1244,9 +1242,9 @@ struct
         zsocket_set_subscribe sub_sock "RELAY";
 
         (* create push socket for sending updates to the invariant manager *)
-        let push_sock = zsocket_new bg_ctx ZMQ_PUSH in 
+        let push_sock = zsock_new ZMQ_PUSH in 
         let rc = 
-          zsocket_connect 
+          zsock_connect 
             push_sock 
             push_port
         in

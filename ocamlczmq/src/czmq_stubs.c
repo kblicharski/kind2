@@ -65,152 +65,26 @@ void caml_zmq_raise_if(int condition) {
 }
 
 /******************
- *  zctx          *
- ******************/
-
-#define CAML_CZMQ_zctx_val(v) (zctx_st *) Data_custom_val(v)
-
-// keep track of sockets on a context 
-typedef struct _zctx_st {
-    zctx_t *context;
-    int socket_count;
-    bool is_freed;
-} zctx_st;
-
-void caml_czmq_finalize_zctx(value context_val)
-{
-    zctx_st *context_record = CAML_CZMQ_zctx_val(context_val);
-
-    if (context_record->socket_count == 0) { 
-        zctx_destroy( &(context_record->context) ); 
-    } else {
-        // socket still using context; socket now responsible for destroying it
-        context_record->is_freed = true;
-    }
-}
-
-static struct custom_operations caml_czmq_zctx_ops = {
-    identifier:     "org.czmq./ctx",
-    finalize:       caml_czmq_finalize_zctx,
-    compare:        custom_compare_default,
-    hash:           custom_hash_default,
-    serialize:      custom_serialize_default,
-    deserialize:    custom_deserialize_default
-};
-
-static value caml_czmq_copy_zctx( zctx_st *context ) {
-    CAMLparam0 ();
-    CAMLlocal1 (context_val);
-
-    context_val = caml_alloc_custom(&caml_czmq_zctx_ops, sizeof(zctx_st), 0, 1);
-    memcpy( Data_custom_val(context_val), context, sizeof(zctx_st) );
-    
-    CAMLreturn (context_val);
-}
-
-
-CAMLprim value 
-caml_zctx_new(value unit)
-{
-    CAMLparam0 ();
-    CAMLlocal1 (context_val);
-
-    void *context = zctx_new();
-    assert (context);
-    zctx_st context_record;
-    context_record.context = context;
-    context_record.socket_count = 0;
-    context_record.is_freed = false;
-    context_val = caml_czmq_copy_zctx(&context_record);
-    
-    CAMLreturn (context_val);
-}
-
-CAMLprim value 
-caml_zctx_set_iothreads(value context_val, value threads_val) 
-{
-    CAMLparam2 (context_val, threads_val);
-
-    zctx_st *context_record = CAML_CZMQ_zctx_val(context_val);
-    int threads = Int_val(threads_val);
-    zctx_set_iothreads(context_record->context, threads);
-    
-    CAMLreturn (Val_unit);
-}
-
-CAMLprim value 
-caml_zctx_set_linger(value context_val, value linger_val) 
-{
-    CAMLparam2 (context_val, linger_val);
-    
-    zctx_st *context_record = CAML_CZMQ_zctx_val(context_val);
-    int linger = Int_val(linger_val);
-    zctx_set_iothreads (context_record->context, linger);
-    
-    CAMLreturn (Val_unit);
-}
-
-/*
-
-// need to take a closer look at these ctx options;
-// hwm not reporting changes made via set_hwm
-CAMLprim value 
-caml_zctx_set_hwm(value context_val, value hwm_val) 
-{
-    CAMLparam2 (context_val, hwm_val);
-    
-    zctx_st *context_record = CAML_CZMQ_zctx_val(context_val);
-    int hwm = Int_val(hwm_val);
-    zctx_set_hwm(context_record->context, hwm);
-    
-    CAMLreturn (Val_unit);
-}
-
-CAMLprim value 
-caml_zctx_hwm(value context_val) 
-{
-    CAMLparam1 (context_val);
-    
-    zctx_st *context_record = CAML_CZMQ_zctx_val(context_val);
-    int hwm = zctx_hwm(context_record->context);
-
-    CAMLreturn (Val_int(hwm));
-}
-
-*/
-
-/******************
  *  zsocket       *
  ******************/
 
-// a socket type containing a zsocket pointer and a zctx_st pointer,
-// both of which are needed for the socket finalizer
+// a socket type containing a zsocket pointer
  typedef struct _socket_st {
     void *socket;
-    zctx_st *context_record;
 } socket_st;
 
 #define CAML_CZMQ_zsocket_val(v) (socket_st *) Data_custom_val(v)
 
-void caml_czmq_finalize_zsocket(value socket_val)
+void caml_czmq_finalize_zsock(value socket_val)
 {
     socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
 
-    zsocket_destroy(socket_record->context_record->context, 
-                    socket_record->socket);
-
-    if ( --(socket_record->context_record->socket_count) == 0 ) {
-        /* this is the last socket on the context. destroy context 
-            if already freed on the OCaml side */
-        if (socket_record->context_record->is_freed == true) { 
-            zctx_destroy( &(socket_record->context_record->context) );
-        }
-    }
+    zsock_destroy(socket_record->socket);
 }
 
 static struct custom_operations caml_czmq_zsocket_ops = {
     identifier:     "org.czmq.zsocket",
-    finalize:       caml_czmq_finalize_zsocket,
+    finalize:       caml_czmq_finalize_zsock,
     compare:        custom_compare_default,
     hash:           custom_hash_default,
     serialize:      custom_serialize_default,
@@ -229,21 +103,18 @@ static value caml_czmq_copy_zsocket( socket_st *socket_record ) {
 
 
 CAMLprim value 
-caml_zsocket_new(value context_val, value type_val)
+caml_zsock_new(value type_val)
 {
-    CAMLparam2 (context_val, type_val);
+    CAMLparam2 (type_val);
     CAMLlocal1 (socket_val);
 
-    zctx_st *context_record = CAML_CZMQ_zctx_val(context_val);
     int type = Int_val(type_val);
     // create socket
-    void *socket = zsocket_new ( context_record->context, type );
+    void *socket = zsock_new ( type );
     assert (socket);
-    context_record->socket_count++;
-    // return structure of zctx and zsocket pointers
+    // return structure of zsocket pointer
     socket_st socket_record;
     socket_record.socket = socket;
-    socket_record.context_record = context_record;
     socket_val = caml_czmq_copy_zsocket(&socket_record);
     
     CAMLreturn (socket_val);
@@ -262,13 +133,13 @@ caml_zsock_bind(value socket_val, value address_val)
 }
 
 CAMLprim value 
-caml_zsocket_connect(value socket_val, value address_val)
+caml_zsock_connect(value socket_val, value address_val)
 {
     CAMLparam2 (socket_val, address_val);
 
     socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
     char *address = String_val(address_val);
-    int rc = zsocket_connect(socket_record->socket, address);
+    int rc = zsock_connect(socket_record->socket, address);
 
     CAMLreturn (Val_int(rc));
 }

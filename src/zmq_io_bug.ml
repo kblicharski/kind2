@@ -11,8 +11,8 @@ exception SocketBindFailure
 let bg_ctx = zctx_new ();;
 
 (* pub socket, for IM to send updates to workers *)
-let pub_sock = zsocket_new bg_ctx ZMQ_PUB;;
-let pull_sock = (zsocket_new bg_ctx ZMQ_PULL);;
+let pub_sock = zsock_new bg_ctx ZMQ_PUB;;
+let pull_sock = (zsock_new bg_ctx ZMQ_PULL);;
 
 
 let thread _ =
