@@ -29,41 +29,17 @@ This file is part of the Kind verifier
 *)
 
 (************************)
-(* OCaml CZMQ bindings *)
+(* OCaml CZMQ bindings  *)
 (************************)
 
 (************************)
-(* zctx                 *)
-(************************)
-
-type zctx
-
-(* Create new context, returns context object *)
-external zctx_new : unit -> zctx = "caml_zctx_new"
-
-(* Raise default I/O threads from 1, for crazy heavy applications *)
-external zctx_set_iothreads : zctx -> int -> unit = "caml_zctx_set_iothreads"
-
-(*  Set msecs to flush sockets when closing them *)
-external zctx_set_linger : zctx -> int -> unit = "caml_zctx_set_linger"
-
-(*
-(*  Set HWM value *)
-external zctx_set_hwm : zctx -> int -> unit = "caml_zctx_set_hwm"
-
-(* Get HWM value *)
-external zctx_hwm : zctx -> int = "caml_zctx_hwm"
-*)
-
-
-(************************)
-(* zsocket              *)
+(* zsock                *)
 (************************)
 
 (* zeromq socket type *)
-type zsocket
+type zsock
 
-type zsocket_type  =
+type zsock_type  =
   | ZMQ_PAIR   (*  0 *)
   | ZMQ_PUB    (*  1 *)
   | ZMQ_SUB    (*  2 *)
@@ -75,25 +51,28 @@ type zsocket_type  =
   | ZMQ_PUSH   (*  8 *)
   | ZMQ_XPUB   (*  9 *)
   | ZMQ_XSUB   (* 10 *)
+  | ZMQ_STREAM (* 11 *)
 
 (* Create a new socket within our CZMQ context *)
-external zsocket_new : zctx -> zsocket_type -> zsocket = "caml_zsocket_new"
+external zsocket_new : zsock_type -> zsock = "caml_zsocket_new"
+(* zsock_t zsock_new (int type);*)
 
 (* Connect socket to address *)
-external zsocket_bind : zsocket -> string -> int = "caml_zsocket_bind"
+external zsocket_bind : zsock -> string -> int = "caml_zsocket_bind"
+(* int zsock_bind (zsock_t *self, const char *format, ...) CHECK_PRINTF (2) *)
 
-(* Connect a socket to a formatted endpoint.
-    Returns 0 if OK, -1 if the endpoint was invalid *)
-external zsocket_connect : zsocket -> string -> int = "caml_zsocket_connect"
+(* Connect a socket to a formatted endpoint. Returns 0 if OK, -1 if the endpoint was invalid *)
+external zsocket_connect : zsock -> string -> int = "caml_zsocket_connect"
+(* int zsock_connect (zsock_t *self, const char *format, ...) CHECK_PRINTF (2); *)
 
 (************************)
 (* zsocketopt           *)
 (************************)
 
 (* Subscribe SUB socket *)
-external zsocket_set_subscribe : zsocket -> string -> unit = "caml_zsocket_set_subscribe"
+external zsocket_set_subscribe : zsock -> string -> unit = "caml_zsocket_set_subscribe"
 (* Unsubscribe SUB socket *)
-external zsocket_set_unsubscribe : zsocket -> string -> unit = "caml_zsocket_set_unsubscribe"
+external zsocket_set_unsubscribe : zsock -> string -> unit = "caml_zsocket_set_unsubscribe"
 
 
 (************************)
@@ -101,16 +80,16 @@ external zsocket_set_unsubscribe : zsocket -> string -> unit = "caml_zsocket_set
 (************************)
 
 (* Receive a string off a socket *)
-external zstr_recv : zsocket -> string = "caml_zstr_recv"
+external zstr_recv : zsock -> string = "caml_zstr_recv"
 
 (* Receive a string off a socket if socket had input waiting *)
-external zstr_recv_nowait : zsocket -> string = "caml_zstr_recv_nowait"
+external zstr_recv_nowait : zsock -> string = "caml_zstr_recv_nowait"
 
 (* Send a string to a socket in 0MQ string format *)
-external zstr_send : zsocket -> string -> int = "caml_zstr_send"
+external zstr_send : zsock -> string -> int = "caml_zstr_send"
 
 (*  Send a string to a socket in 0MQ string format, with MORE flag *)
-external zstr_sendm : zsocket -> string -> int = "caml_zstr_sendm"
+external zstr_sendm : zsock -> string -> int = "caml_zstr_sendm"
 
 (************************)
 (* zframe               *)
@@ -127,11 +106,11 @@ external zframe_new : string -> int -> zframe = "caml_zframe_new"
 external zframe_getbytes : zframe -> char array = "caml_zframe_getbytes"
 
 (*  Receive frame from socket. Does a blocking recv *)
-external zframe_recv : zsocket -> zframe = "caml_zframe_recv"
+external zframe_recv : zsock -> zframe = "caml_zframe_recv"
 
 (*  Send a frame to a socket, destroy frame after sending. Returns
     	non-zero error code on failure *)
-external zframe_send : zframe -> zsocket -> int -> int = "caml_zframe_send"
+external zframe_send : zframe -> zsock -> int -> int = "caml_zframe_send"
 
 (*  Return number of bytes in frame data *)
 external zframe_size : zframe -> int = "caml_zframe_size"
@@ -173,13 +152,13 @@ type zmsg
 external zmsg_new : unit -> zmsg = "caml_zmsg_new"
 
 (* Read 1 or more frames off the socket, into a new message object *)
-external zmsg_recv : zsocket -> zmsg = "caml_zmsg_recv"
+external zmsg_recv : zsock -> zmsg = "caml_zmsg_recv"
 
 (* Read 0 or more frames off the socket, into a new message object *)
-external zmsg_recv_nowait : zsocket -> zmsg = "caml_zmsg_recv_nowait"
+external zmsg_recv_nowait : zsock -> zmsg = "caml_zmsg_recv_nowait"
 
 (* Send a message to the socket, and then destroy it *)
-external zmsg_send : zmsg -> zsocket -> int = "caml_zmsg_send"
+external zmsg_send : zmsg -> zsock -> int = "caml_zmsg_send"
 
 (* Return number of frames in message *)
 external zmsg_size : zmsg -> int = "caml_zmsg_size"

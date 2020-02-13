@@ -1189,7 +1189,7 @@ struct
 
     (* pub socket to send updates to workers *)
     let pub_sock = zsocket_new bg_ctx ZMQ_PUB in
-    let bcast_port = zsocket_bind pub_sock "tcp://127.0.0.1:*" in
+    let bcast_port = zsock_bind pub_sock "tcp://127.0.0.1:*" in
 
     if bcast_port < 0 then raise SocketBindFailure else
 
@@ -1197,7 +1197,7 @@ struct
 
         (* pull socket to get updates from workers *)
         let pull_sock = (zsocket_new bg_ctx ZMQ_PULL) in 
-        let push_port = zsocket_bind pull_sock "tcp://127.0.0.1:*" in
+        let push_port = zsock_bind pull_sock "tcp://127.0.0.1:*" in
 
         if push_port < 0 then raise SocketBindFailure else
 
