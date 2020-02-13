@@ -138,10 +138,6 @@ end
 module Make (T: RelayMessage) : S with type relay_message = T.t =
 struct
 
-  (* ZeroMQ context *)
-  type ctx = ZMQ.zctx
-
-               
   (* ZeroMQ socket *)
   type socket = ZMQ.zsock
 
@@ -1009,7 +1005,7 @@ struct
   (*  Threads                                                             *)
   (* ******************************************************************** *)
 
-  let im_thread (bg_ctx, pub_sock, pull_sock) workers on_exit =
+  let im_thread (pub_sock, pull_sock) workers on_exit =
 
     let invariant_id = ref 1 in
 
@@ -1104,7 +1100,7 @@ struct
     with e -> on_exit e
                 
 
-  let worker_thread (bg_ctx, sub_sock, push_sock) (proc, on_exit) =
+  let worker_thread (sub_sock, push_sock) (proc, on_exit) =
 
     try 
 
@@ -1209,7 +1205,7 @@ struct
               push_port;
 
             (* Return sockets *)
-            (bg_ctx, pub_sock, pull_sock), 
+            (pub_sock, pull_sock), 
 
             (* Return broadcast and push ports *)
             (Format.sprintf "tcp://127.0.0.1:%d" bcast_port,
@@ -1260,14 +1256,14 @@ struct
               push_port ;
 
             (* Return sockets *)
-            (bg_ctx, sub_sock, push_sock)
+            (sub_sock, push_sock)
 
           )
 
       )
 
 
-  let run_im (bg_ctx, pub_sock, pull_sock) workers on_exit =
+  let run_im (pub_sock, pull_sock) workers on_exit =
 
     try           
 
@@ -1275,7 +1271,7 @@ struct
 
         let p = 
           Thread.create
-            (im_thread (bg_ctx, pub_sock, pull_sock) workers) 
+            (im_thread (pub_sock, pull_sock) workers) 
             on_exit 
         in
 
@@ -1290,7 +1286,7 @@ struct
       | SocketBindFailure -> raise SocketBindFailure
                                
   
-  let run_worker (bg_ctx, sub_sock, push_sock) proc on_exit =
+  let run_worker (sub_sock, push_sock) proc on_exit =
 
     try 
 
@@ -1298,7 +1294,7 @@ struct
 
         let p = 
           Thread.create 
-            (worker_thread (bg_ctx, sub_sock, push_sock)) 
+            (worker_thread (sub_sock, push_sock)) 
             (proc, on_exit) 
         in
 
