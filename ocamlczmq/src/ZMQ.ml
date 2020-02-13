@@ -58,7 +58,7 @@ external zsocket_new : zsock_type -> zsock = "caml_zsocket_new"
 (* zsock_t zsock_new (int type);*)
 
 (* Connect socket to address *)
-external zsocket_bind : zsock -> string -> int = "caml_zsocket_bind"
+external zsock_bind : zsock -> string -> int = "caml_zsock_bind"
 (* int zsock_bind (zsock_t *self, const char *format, ...) CHECK_PRINTF (2) *)
 
 (* Connect a socket to a formatted endpoint. Returns 0 if OK, -1 if the endpoint was invalid *)
@@ -220,7 +220,7 @@ let selftest () =
   let ctx = zctx_new() in
   (* PUB, SUB *)
   let pub_sock = zsocket_new ctx ZMQ_PUB in
-  let rc = zsocket_bind pub_sock "tcp://*:5556" in
+  let rc = zsock_bind pub_sock "tcp://*:5556" in
   if rc < 0 then raise SocketBindFailure else
     let sub_sock = (zsocket_new ctx ZMQ_SUB) in 
     let rc = zsocket_connect sub_sock "tcp://localhost:5556" in
@@ -231,7 +231,7 @@ let selftest () =
     let rc = zsocket_connect push_sock "tcp://localhost:5557" in
     if rc < 0 then raise SocketConnectFailure else
       let pull_sock = (zsocket_new ctx ZMQ_PULL) in 
-      let rc = zsocket_bind pull_sock "tcp://*:5557" in
+      let rc = zsock_bind pull_sock "tcp://*:5557" in
       if rc < 0 then raise SocketBindFailure else
         print_endline "Sockets connected";
 
