@@ -250,13 +250,13 @@ caml_zsocket_new(value context_val, value type_val)
 }
 
 CAMLprim value 
-caml_zsocket_bind(value socket_val, value address_val)
+caml_zsock_bind(value socket_val, value address_val)
 {
     CAMLparam2 (socket_val, address_val);
 
     socket_st *socket_record = CAML_CZMQ_zsocket_val(socket_val);
     char *address = String_val(address_val);
-    int rc = zsocket_bind(socket_record->socket, address);
+    int rc = zsock_bind(socket_record->socket, address);
     
     CAMLreturn (Val_int(rc));
 }

@@ -55,11 +55,9 @@ type zsock_type  =
 
 (* Create a new socket within our CZMQ context *)
 external zsocket_new : zsock_type -> zsock = "caml_zsocket_new"
-(* zsock_t zsock_new (int type);*)
 
 (* Connect socket to address *)
 external zsock_bind : zsock -> string -> int = "caml_zsock_bind"
-(* int zsock_bind (zsock_t *self, const char *format, ...) CHECK_PRINTF (2) *)
 
 (* Connect a socket to a formatted endpoint. Returns 0 if OK, -1 if the endpoint was invalid *)
 external zsocket_connect : zsock -> string -> int = "caml_zsocket_connect"
