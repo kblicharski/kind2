@@ -18,6 +18,6 @@ ZeroMQ and the CZMQ high-level C binding for ØMQ are included as subtrees from 
 Updating the libraries (run from the project root, replace tags appropriately):
 
     ```bash
-    git subtree pull --prefix=ocamlczmq/libzmq --squash https://github.com/zeromq/libzmq tags/v4.3.2
-    git subtree pull --prefix=ocamlczmq/czmq --squash https://github.com/zeromq/czmq tags/v4.2.0
+    git subtree add --prefix=ocamlczmq/libzmq --squash https://github.com/zeromq/libzmq tags/v4.3.2
+    git subtree add --prefix=ocamlczmq/czmq --squash https://github.com/zeromq/czmq tags/v4.2.0
     ```
