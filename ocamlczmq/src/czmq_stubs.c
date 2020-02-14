@@ -105,7 +105,7 @@ static value caml_czmq_copy_zsock( socket_st *socket_record ) {
 CAMLprim value 
 caml_zsock_new(value type_val)
 {
-    CAMLparam2 (type_val);
+    CAMLparam1 (type_val);
     CAMLlocal1 (socket_val);
 
     int type = Int_val(type_val);
