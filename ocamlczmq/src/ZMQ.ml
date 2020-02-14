@@ -69,7 +69,6 @@ external zsock_set_subscribe : zsock -> string -> unit = "caml_zsock_set_subscri
 (* Currently unused? *)
 external zsock_set_unsubscribe : zsock -> string -> unit = "caml_zsock_set_unsubscribe"
 
-
 (************************)
 (* zstr                 *)
 (************************)
