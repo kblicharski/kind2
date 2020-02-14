@@ -28,175 +28,175 @@ This file is part of the Kind verifier
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
 
-(** OCaml CZMQ bindings *)
 
-(** zeromq context type *)
-type zctx
+(************************)
+(* OCaml CZMQ bindings  *)
+(************************)
 
-(** Create new context, returns context object *)
-external zctx_new : unit -> zctx = "caml_zctx_new"
+(************************)
+(* zsock                *)
+(************************)
 
-(** Raise default I/O threads from 1, for crazy heavy applications *)
-external zctx_set_iothreads : zctx -> int -> unit = "caml_zctx_set_iothreads"
+(* zeromq socket type *)
+type zsock
 
-(** Set msecs to flush sockets when closing them *)
-external zctx_set_linger : zctx -> int -> unit = "caml_zctx_set_linger"
+type zsock_type  =
+  | ZMQ_PAIR   (*  0 *)
+  | ZMQ_PUB    (*  1 *)
+  | ZMQ_SUB    (*  2 *)
+  | ZMQ_REQ    (*  3 *)
+  | ZMQ_REP    (*  4 *)
+  | ZMQ_DEALER (*  5 *)
+  | ZMQ_ROUTER (*  6 *)
+  | ZMQ_PULL   (*  7 *)
+  | ZMQ_PUSH   (*  8 *)
+  | ZMQ_XPUB   (*  9 *)
+  | ZMQ_XSUB   (* 10 *)
+  | ZMQ_STREAM (* 11 *)
 
-(*
-(** Set HWM value *)
-external zctx_set_hwm : zctx -> int -> unit = "caml_zctx_set_hwm"
+(* Create a new socket *)
+external zsock_new : zsock_type -> zsock = "caml_zsock_new"
 
-(** Get HWM value *)
-external zctx_hwm : zctx -> int = "caml_zctx_hwm"
-*)
+(* Connect socket to address *)
+external zsock_bind : zsock -> string -> int = "caml_zsock_bind"
 
-(** zeromq socket type *)
-type zsocket
-type zsocket_type =
-    ZMQ_PAIR
-  | ZMQ_PUB
-  | ZMQ_SUB
-  | ZMQ_REQ
-  | ZMQ_REP
-  | ZMQ_DEALER
-  | ZMQ_ROUTER
-  | ZMQ_PULL
-  | ZMQ_PUSH
-  | ZMQ_XPUB
-  | ZMQ_XSUB
+(* Connect a socket to a formatted endpoint. Returns 0 if OK, -1 if the endpoint was invalid *)
+external zsock_connect : zsock -> string -> int = "caml_zsock_connect"
 
-(** Create a new socket within our CZMQ context *)
-external zsocket_new : zctx -> zsocket_type -> zsocket = "caml_zsocket_new"
+(* Subscribe SUB socket *)
+external zsock_set_subscribe : zsock -> string -> unit = "caml_zsock_set_subscribe"
 
-(** Connect socket to address *)
-external zsocket_bind : zsocket -> string -> int = "caml_zsocket_bind"
+(* Unsubscribe SUB socket *)
+(* Currently unused? *)
+external zsock_set_unsubscribe : zsock -> string -> unit = "caml_zsock_set_unsubscribe"
 
-(** Connect a socket to a formatted endpoint.
-    Returns 0 if OK, -1 if the endpoint was invalid *)
-external zsocket_connect : zsocket -> string -> int = "caml_zsocket_connect"
+(************************)
+(* zstr                 *)
+(************************)
 
-(** Subscribe SUB socket *)
-external zsocket_set_subscribe : zsocket -> string -> unit
-  = "caml_zsocket_set_subscribe"
+(* Receive a string off a socket *)
+external zstr_recv : zsock -> string = "caml_zstr_recv"
 
-(** Unsubscribe SUB socket *)
-external zsocket_set_unsubscribe : zsocket -> string -> unit
-  = "caml_zsocket_set_unsubscribe"
+(* Receive a string off a socket if socket had input waiting *)
+external zstr_recv_nowait : zsock -> string = "caml_zstr_recv_nowait"
 
-(** Receive a string off a socket *)
-external zstr_recv : zsocket -> string = "caml_zstr_recv"
+(* Send a string to a socket in 0MQ string format *)
+external zstr_send : zsock -> string -> int = "caml_zstr_send"
 
-(** Receive a string off a socket if socket had input waiting *)
-external zstr_recv_nowait : zsocket -> string = "caml_zstr_recv_nowait"
+(*  Send a string to a socket in 0MQ string format, with MORE flag *)
+external zstr_sendm : zsock -> string -> int = "caml_zstr_sendm"
 
-(** Send a string to a socket in zeromq string format *)
-external zstr_send : zsocket -> string -> int = "caml_zstr_send"
+(************************)
+(* zframe               *)
+(************************)
 
-(**  Send a string to a socket in zeromq string format, with MORE flag *)
-external zstr_sendm : zsocket -> string -> int = "caml_zstr_sendm"
-
-(** zeromq zframe type *)
+(* zeromq zframe type *)
 type zframe
 
-(** Create a new frame *)
+(* Create a new frame with optional size, and optional data *)
+(* Might be nice to not require passing size from the ocaml side *)
 external zframe_new : string -> int -> zframe = "caml_zframe_new"
 
-(** Get a byte array of the data in the frame *)
+(* Get a byte array of the data in the frame *)
 external zframe_getbytes : zframe -> char array = "caml_zframe_getbytes"
 
-(** Receive frame from socket. Does a blocking recv *)
-external zframe_recv : zsocket -> zframe = "caml_zframe_recv"
+(*  Receive frame from socket. Does a blocking recv *)
+external zframe_recv : zsock -> zframe = "caml_zframe_recv"
 
-(** Send a frame to a socket, destroy frame after sending. Returns
-  non-zero error code on failure *)
-external zframe_send : zframe -> zsocket -> int -> int = "caml_zframe_send"
+(*  Send a frame to a socket, destroy frame after sending. Returns
+    non-zero error code on failure *)
+external zframe_send : zframe -> zsock -> int -> int = "caml_zframe_send"
 
-(** Return number of bytes in frame data *)
+(*  Return number of bytes in frame data *)
 external zframe_size : zframe -> int = "caml_zframe_size"
 
-(** Create a new frame that duplicates an existing frame *)
+(*  Create a new frame that duplicates an existing frame *)
 external zframe_dup : zframe -> zframe = "caml_zframe_dup"
 
-(** Return frame data encoded as printable hex string *)
+(*  Return frame data encoded as printable hex string *)
 external zframe_strhex : zframe -> string = "caml_zframe_strhex"
 
 (*  Return frame data copied into freshly allocated string.
-  Binary strings are supported. *)
+    Binary strings are supported. *)
 external zframe_strdup : zframe -> string = "caml_zframe_strdup"
 
-(** Return true if frame body is equal to string, excluding terminator *)
+(*  Return true if frame body is equal to string, excluding terminator *)
 external zframe_streq : zframe -> string -> bool = "caml_zframe_streq"
 
-(** Return frame 'more' property *)
+(*  Return frame 'more' property *)
 external zframe_more : zframe -> int = "caml_zframe_more"
 
-(** Return true if two frames have identical size and data *)
+(*  Return true if two frames have identical size and data *)
 external zframe_eq : zframe -> zframe -> bool = "caml_zframe_eq"
 
-(** Print contents of frame to stderr *)
+(*  Print contents of frame to stderr *)
 external zframe_print : zframe -> string -> unit = "caml_zframe_print"
 
-(** Set new contents for frame *)
+(*  Set new contents for frame *)
 external zframe_reset : zframe -> string -> int -> unit = "caml_zframe_reset"
 
 
-(** zeromq zmsg type *)
+(************************)
+(* zmsg                 *)
+(************************)
+
+(* zeromq zmsg type *)
 type zmsg
 
-(** Create a new empty message object *)
+(* Create a new empty message object *)
 external zmsg_new : unit -> zmsg = "caml_zmsg_new"
 
-(** Read 1 or more frames off the socket, into a new message object *)
-external zmsg_recv : zsocket -> zmsg = "caml_zmsg_recv"
+(* Read 1 or more frames off the socket, into a new message object *)
+external zmsg_recv : zsock -> zmsg = "caml_zmsg_recv"
 
-(** Read 0 or more frames off the socket, into a new message object *)
-external zmsg_recv_nowait : zsocket -> zmsg = "caml_zmsg_recv_nowait"
+(* Read 0 or more frames off the socket, into a new message object *)
+external zmsg_recv_nowait : zsock -> zmsg = "caml_zmsg_recv_nowait"
 
-(** Send a message to the socket, and then destroy it *)
-external zmsg_send : zmsg -> zsocket -> int = "caml_zmsg_send"
+(* Send a message to the socket, and then destroy it *)
+external zmsg_send : zmsg -> zsock -> int = "caml_zmsg_send"
 
-(** Return number of frames in message *)
+(* Return number of frames in message *)
 external zmsg_size : zmsg -> int = "caml_zmsg_size"
 
-(** Return combined size of all frames in message *)
+(* Return combined size of all frames in message *)
 external zmsg_content_size : zmsg -> int = "caml_zmsg_content_size"
 
-(** Push frame to front of message, before first frame *)
+(* Push frame to front of message, before first frame *)
 external zmsg_push : zmsg -> zframe -> int = "caml_zmsg_push"
 
-(** Pop frame off front of message *)
+(* Pop frame off front of message *)
 external zmsg_pop : zmsg -> zframe = "caml_zmsg_pop"
 
-(** Add frame to end of message, after last frame *)
+(* Add frame to end of message, after last frame *)
 external zmsg_add : zmsg -> zframe -> int = "caml_zmsg_add"
 
 (** Push string as new frame to front of message. Binary strings are supported.
-  Returns 0 on success, -1 on error *)
+    Returns 0 on success, -1 on error *)
 external zmsg_pushstr : zmsg -> string -> int = "caml_zmsg_pushstr"
 
 (** Push string as new frame to front of message. Binary strings are supported.
-  Returns 0 on success, -1 on error. This duplicates zmsg_pushstr and can be deleted.*)
+    Returns 0 on success, -1 on error. This duplicates zmsg_pushstr and can be deleted.*)
 external zmsg_pushbstr : zmsg -> string -> int -> int = "caml_zmsg_pushbstr"
 
-(** Push string as new frame to end of message.
-  Returns 0 on success, -1 on error *)
+(* Push string as new frame to end of message.
+   Returns 0 on success, -1 on error *)
 external zmsg_addstr : zmsg -> string -> int = "caml_zmsg_addstr"
 
-(** Pop frame off front of message, return as fresh string *)
+(* Pop frame off front of message, return as fresh string *)
 external zmsg_popstr : zmsg -> string = "caml_zmsg_popstr"
 
-(** Push frame to front of message, before first frame.
-  Pushes an empty frame in front of frame *)
+(* Push frame to front of message, before first frame.
+   Pushes an empty frame in front of frame *)
 external zmsg_wrap : zmsg -> zframe -> unit = "caml_zmsg_wrap"
 
-(** Pop frame off front of message *)
+(* Pop frame off front of message *)
 external zmsg_unwrap : zmsg -> zframe = "caml_zmsg_unwrap"
 
-(** Remove frame from message, at any position *)
+(* Remove frame from message, at any position *)
 external zmsg_remove : zmsg -> zframe -> unit = "caml_zmsg_remove"
 
-(** Create copy of message, as new message object *)
+(* Create copy of message, as new message object *)
 external zmsg_dup : zmsg -> zmsg = "caml_zmsg_dup"
 
-(** Print message to stderr, for debugging *)
+(* Print message to stderr, for debugging *)
 external zmsg_dump : zmsg -> unit = "caml_zmsg_dump"
