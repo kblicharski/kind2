@@ -155,11 +155,11 @@ struct
       let p = pop () in
 
       let cex_string = pop () in
-      
+
       let cex : (StateVar.t * Model.value list) list = 
         Marshal.from_string cex_string 0
       in
-      
+
       let cex' =
         List.map
           (fun (sv, t) -> 
@@ -175,11 +175,11 @@ struct
       let p = pop () in
 
       let cex_string = pop () in
-      
+
       let cex : (StateVar.t * Model.value list) list = 
         Marshal.from_string cex_string 0
       in
-      
+
       let cex' =
         List.map
           (fun (sv, t) -> 
@@ -206,13 +206,13 @@ struct
 
       (* Serialize term to string *)
       let phi_string = Marshal.to_string phi [Marshal.No_sharing] in
-      
+
       (* Serialize scope to string *)
       let scope_string = Marshal.to_string s [Marshal.No_sharing] in
 
       (* Serialize two state flag to string. *)
       let ts_string = Marshal.to_string two_state [Marshal.No_sharing] in
-      
+
       [
         ts_string ;
         string_of_int k ;
@@ -234,21 +234,21 @@ struct
 
       (* Serialize term to string *)
       let phi_string = Marshal.to_string phi [Marshal.No_sharing] in
-      
+
       [phi_string; string_of_int k; p; "PROP_INVAR"]
 
     | PropStatus (p, Property.PropFalse cex) ->
 
       (* Serialize counterexample to string *)
       let cex_string = Marshal.to_string cex [Marshal.No_sharing] in
-      
+
       [cex_string; p; "PROP_FALSE"]
 
     | StepCex (p, cex) ->
 
       (* Serialize counterexample to string *)
       let cex_string = Marshal.to_string cex [Marshal.No_sharing] in
-      
+
       [cex_string; p; "STEP_CEX"]
 
   (* Pretty-print a message *)
@@ -274,10 +274,10 @@ let set_module mdl = this_module := mdl
 (* Get module currently running *)
 let get_module () = !this_module
 
-(* Setup of the messaging: context and sockets of the invariant
+(* Setup of the messaging: sockets of the invariant
    manager, ports to connect to for the workers *)
 type messaging_setup = 
-  (EventMessaging.ctx * EventMessaging.socket * EventMessaging.socket) * (string * string)
+  (EventMessaging.socket * EventMessaging.socket) * (string * string)
 
 type mthread = EventMessaging.thread
 
@@ -295,15 +295,15 @@ let setup () =
 let run_process proc (_, (bcast_port, push_port)) on_exit = 
 
   (* Initialize messaging for process *)
-  let ctx = EventMessaging.init_worker proc bcast_port push_port in
+  let sockets = EventMessaging.init_worker proc bcast_port push_port in
 
   (* Run messaging for process *)
-  EventMessaging.run_worker ctx proc on_exit
+  EventMessaging.run_worker sockets proc on_exit
 
 
 (* Start messaging for invariant manager *)
-let run_im (ctx, _) pids on_exit = 
-  EventMessaging.run_im ctx pids on_exit
+let run_im (sockets, _) pids on_exit = 
+  EventMessaging.run_im sockets pids on_exit
 
 
 (* ********************************************************************** *)
@@ -316,7 +316,7 @@ module MdlMap =
   Map.Make
     (struct 
       type t = kind_module 
-          
+
       let compare m1 m2 = 
         compare (int_of_kind_module m1) (int_of_kind_module m2)
     end)
@@ -332,7 +332,7 @@ let all_stats () =
        (fun mdl stats accum -> (mdl, stats) :: accum)
        !last_stats
        [])
-       
+
 
 (* ********************************************************************** *)
 (* Plain text output                                                      *)
@@ -379,38 +379,38 @@ let proved_pt mdl level trans_sys k prop =
          "Candidate" else "Property")
       prop
       (function ppf -> match k with
-         | None -> ()
-         | Some k -> Format.fprintf ppf "for k=%d " k)
+          | None -> ()
+          | Some k -> Format.fprintf ppf "for k=%d " k)
       pp_print_kind_module_pt mdl
       (Stat.get_float Stat.analysis_time)
 
 (* Pretty-print a counterexample *)
 let pp_print_counterexample_pt 
-  level input_sys analysis trans_sys prop_name disproved ppf
-= function
-| [] -> ()
-| cex -> (
-  (* Get property by name *)
-  let prop =
-    TransSys.property_of_name trans_sys prop_name
-  in
+    level input_sys analysis trans_sys prop_name disproved ppf
+  = function
+    | [] -> ()
+    | cex -> (
+        (* Get property by name *)
+        let prop =
+          TransSys.property_of_name trans_sys prop_name
+        in
 
-  (* Slice counterexample and transitions system to property *)
-  let trans_sys, instances, cex, prop_term, input_sys =
-    InputSystem.slice_to_abstraction_and_property
-      input_sys
-      analysis
-      trans_sys
-      cex
-      prop
-  in
+        (* Slice counterexample and transitions system to property *)
+        let trans_sys, instances, cex, prop_term, input_sys =
+          InputSystem.slice_to_abstraction_and_property
+            input_sys
+            analysis
+            trans_sys
+            cex
+            prop
+        in
 
-  (* Output counterexample *)
-  Format.fprintf ppf 
-    "@{<red>Counterexample@}:@,  @[<v>%a@]"
-    (InputSystem.pp_print_path_pt input_sys trans_sys instances disproved)
-    (Model.path_of_list cex)
-)
+        (* Output counterexample *)
+        Format.fprintf ppf 
+          "@{<red>Counterexample@}:@,  @[<v>%a@]"
+          (InputSystem.pp_print_path_pt input_sys trans_sys instances disproved)
+          (Model.path_of_list cex)
+      )
 
 
 (* Output execution path without slicing *)
@@ -454,8 +454,8 @@ let cex_pt mdl level input_sys analysis trans_sys prop cex disproved =
           prop
           pp_print_kind_module_pt mdl
           (function ppf -> match cex with
-             | [] -> ()
-             | ((_, c) :: _) -> Format.fprintf ppf "for k=%d " (List.length c))
+              | [] -> ()
+              | ((_, c) :: _) -> Format.fprintf ppf "for k=%d " (List.length c))
           (Stat.get_float Stat.analysis_time)
           (* (pp_print_counterexample_pt *)
           (*    (log_level_of_int (int_of_log_level level + 2)) *)
@@ -467,7 +467,7 @@ let cex_pt mdl level input_sys analysis trans_sys prop cex disproved =
       (* Output cex. *)
       (ignore_or_fprintf level)
         !log_ppf 
-      "@[<v>%t Property @{<blue_b>%s@} %s %tafter %.3fs.@,@,%a@]@."
+        "@[<v>%t Property @{<blue_b>%s@} %s %tafter %.3fs.@,@,%a@]@."
         (if disproved then failure_tag else warning_tag)
         prop
         (
@@ -477,9 +477,9 @@ let cex_pt mdl level input_sys analysis trans_sys prop cex disproved =
             "has a step k-induction counterexample"
         )
         (function ppf -> match cex with
-           | [] -> ()
-         | ((_, c) :: _) ->
-           (List.length c) - 1 |> Format.fprintf ppf "for k=%d ")
+            | [] -> ()
+            | ((_, c) :: _) ->
+              (List.length c) - 1 |> Format.fprintf ppf "for k=%d ")
         (Stat.get_float Stat.analysis_time)
         (pp_print_counterexample_pt
            level input_sys analysis trans_sys prop disproved)
@@ -507,9 +507,9 @@ let stat_pt mdl level stats =
     pp_print_kind_module mdl
     (pp_print_list
        (function ppf -> function (section, items) -> 
-          Format.fprintf ppf "[%s]@,%a@," 
-            section
-            Stat.pp_print_stats items)
+            Format.fprintf ppf "[%s]@,%a@," 
+              section
+              Stat.pp_print_stats items)
        "@,")
     stats
 
@@ -538,28 +538,28 @@ let prop_status_pt level prop_status =
             "@[<h>@{<blue_b>%s@}: %a@]"
             p
             (function ppf -> function 
-               | Property.PropUnknown -> 
-                 Format.fprintf ppf "@{<red>unknown@}"
+                | Property.PropUnknown -> 
+                  Format.fprintf ppf "@{<red>unknown@}"
 
-               | Property.PropKTrue k -> 
-                 Format.fprintf ppf "@{<yellow>true up to %d steps@}" k
+                | Property.PropKTrue k -> 
+                  Format.fprintf ppf "@{<yellow>true up to %d steps@}" k
 
-               | Property.PropInvariant (k, _) -> 
-                 Format.fprintf ppf "@{<green_b>valid (at %d)@}" k
+                | Property.PropInvariant (k, _) -> 
+                  Format.fprintf ppf "@{<green_b>valid (at %d)@}" k
 
-               | Property.PropFalse [] -> 
-                 Format.fprintf ppf "@{<red_b>invalid@}"
+                | Property.PropFalse [] -> 
+                  Format.fprintf ppf "@{<red_b>invalid@}"
 
-               | Property.PropFalse cex -> 
-                 Format.fprintf 
-                   ppf
-                   "@{<red_b>invalid after %d steps@}"
-                   ((Property.length_of_cex cex) - 1))
+                | Property.PropFalse cex -> 
+                  Format.fprintf 
+                    ppf
+                    "@{<red_b>invalid after %d steps@}"
+                    ((Property.length_of_cex cex) - 1))
             s)
        "@,")
     prop_status
     Pretty.print_double_line ()
-          
+
 
 (* ********************************************************************** *)
 (* XML specific functions                                                 *)
@@ -569,7 +569,7 @@ let escape_xml_name s =
   let ltr = Str.regexp "<" in
   let gtr = Str.regexp ">" in
   s |> Str.global_replace ltr "&lt;"
-    |> Str.global_replace gtr "&gt;"
+  |> Str.global_replace gtr "&gt;"
 
 (* Level to class attribute of log tag *)
 let xml_cls_of_level = string_of_log_level
@@ -579,35 +579,35 @@ let prop_attributes_xml trans_sys prop_name =
 
   let pp_print_fname ppf fname =
     if fname = "" then () else
-    Format.fprintf ppf " file=\"%s\"" fname
+      Format.fprintf ppf " file=\"%s\"" fname
   in
 
   let rec get_attributes = function
     | Property.PropAnnot pos ->
-        let fname, lnum, cnum = file_row_col_of_pos pos in
-        Format.asprintf " line=\"%d\" column=\"%d\" source=\"PropAnnot\"%a"
+      let fname, lnum, cnum = file_row_col_of_pos pos in
+      Format.asprintf " line=\"%d\" column=\"%d\" source=\"PropAnnot\"%a"
         lnum cnum pp_print_fname fname
     | Property.Generated _ -> ""
     | Property.Candidate None -> ""
     | Property.Candidate (Some source) -> get_attributes source
     | Property.Instantiated (scope,prop) ->
-        get_attributes prop.Property.prop_source
+      get_attributes prop.Property.prop_source
     | Property.Assumption (pos, scope) ->
-        let fname, lnum, cnum = file_row_col_of_pos pos in
-        Format.asprintf " line=\"%d\" column=\"%d\" scope=\"%s\" source=\"Assumption\"%a"
-          lnum cnum (String.concat "." scope) pp_print_fname fname
+      let fname, lnum, cnum = file_row_col_of_pos pos in
+      Format.asprintf " line=\"%d\" column=\"%d\" scope=\"%s\" source=\"Assumption\"%a"
+        lnum cnum (String.concat "." scope) pp_print_fname fname
     | Property.Guarantee (pos, scope) ->
-        let fname, lnum, cnum = file_row_col_of_pos pos in
-        Format.asprintf " line=\"%d\" column=\"%d\" scope=\"%s\" source=\"Guarantee\"%a"
-          lnum cnum (String.concat "." scope) pp_print_fname fname
+      let fname, lnum, cnum = file_row_col_of_pos pos in
+      Format.asprintf " line=\"%d\" column=\"%d\" scope=\"%s\" source=\"Guarantee\"%a"
+        lnum cnum (String.concat "." scope) pp_print_fname fname
     | Property.GuaranteeOneModeActive (pos, scope) ->
-        let fname, lnum, cnum = file_row_col_of_pos pos in
-        Format.asprintf " line=\"%d\" column=\"%d\" scope=\"%s\" source=\"OneModeActive\"%a"
-          lnum cnum (String.concat "." scope) pp_print_fname fname
+      let fname, lnum, cnum = file_row_col_of_pos pos in
+      Format.asprintf " line=\"%d\" column=\"%d\" scope=\"%s\" source=\"OneModeActive\"%a"
+        lnum cnum (String.concat "." scope) pp_print_fname fname
     | Property.GuaranteeModeImplication (pos, scope) ->
-        let fname, lnum, cnum = file_row_col_of_pos pos in
-        Format.asprintf " line=\"%d\" column=\"%d\" scope=\"%s\" source=\"Ensure\"%a"
-          lnum cnum (String.concat "." scope) pp_print_fname fname
+      let fname, lnum, cnum = file_row_col_of_pos pos in
+      Format.asprintf " line=\"%d\" column=\"%d\" scope=\"%s\" source=\"Ensure\"%a"
+        lnum cnum (String.concat "." scope) pp_print_fname fname
   in
 
   get_attributes prop.Property.prop_source
@@ -641,12 +641,12 @@ let proved_xml mdl level trans_sys k prop_name =
       (escape_xml_name prop_name) (prop_attributes_xml trans_sys prop_name)
       (Stat.get_float Stat.analysis_time)
       (function ppf -> match k with 
-         | None -> () 
-         | Some k -> Format.fprintf ppf "<K>%d</K>@," k)
+          | None -> () 
+          | Some k -> Format.fprintf ppf "<K>%d</K>@," k)
       pp_print_kind_module_xml_src mdl
       (function ppf -> match comment with
-         | None -> ()
-         | Some msg -> Format.fprintf ppf " comment=\"%s\"" msg
+          | None -> ()
+          | Some msg -> Format.fprintf ppf " comment=\"%s\"" msg
       )
 
 
@@ -661,41 +661,41 @@ let pp_print_counterexample_xml
 
   function
 
-    | [] -> ()
+  | [] -> ()
 
-    | cex -> 
+  | cex -> 
 
-      (
+    (
 
-        (* Get property by name *)
-        let prop =
-          TransSys.property_of_name trans_sys prop_name
-        in
+      (* Get property by name *)
+      let prop =
+        TransSys.property_of_name trans_sys prop_name
+      in
 
-        (* Slice counterexample and transitions system to property *)
-        let trans_sys', instances, cex', prop_term, input_sys' =
-          InputSystem.slice_to_abstraction_and_property
-            input_sys
-            analysis
-            trans_sys
-            cex
-            prop
-        in
+      (* Slice counterexample and transitions system to property *)
+      let trans_sys', instances, cex', prop_term, input_sys' =
+        InputSystem.slice_to_abstraction_and_property
+          input_sys
+          analysis
+          trans_sys
+          cex
+          prop
+      in
 
-        let tag = "CounterExample" in
+      let tag = "CounterExample" in
 
-        try
-          (* Output counterexample *)
-          Format.fprintf ppf
-            "@[<hv 2>\ <%s>%a@]@,</%s>"
-            tag
-            (InputSystem.pp_print_path_xml input_sys' trans_sys' instances disproved)
-            (Model.path_of_list cex')
-            tag
-        with TimeoutWall -> (
+      try
+        (* Output counterexample *)
+        Format.fprintf ppf
+          "@[<hv 2>\ <%s>%a@]@,</%s>"
+          tag
+          (InputSystem.pp_print_path_xml input_sys' trans_sys' instances disproved)
+          (Model.path_of_list cex')
+          tag
+      with TimeoutWall -> (
           Format.fprintf ppf "@]@,</%s>@;<0 -2></Property>@]@." tag
         )
-      )
+    )
 
 
 (* Output execution path without slicing *)
@@ -717,13 +717,13 @@ let execution_path_xml level input_sys analysis trans_sys path =
       %a@;<0 -2>\
       </Execution>@]@.")
     (pp_print_path_xml input_sys analysis trans_sys true) path
-  
+
 
 (* Output disproved property as XML *)
 let cex_xml
-mdl level input_sys analysis trans_sys prop_name (
-  cex : (StateVar.t * Model.value list) list
-) disproved = 
+    mdl level input_sys analysis trans_sys prop_name (
+    cex : (StateVar.t * Model.value list) list
+  ) disproved = 
 
   let prop = TransSys.property_of_name trans_sys prop_name in
   (* Only ouptut if status was unknown *)
@@ -744,10 +744,10 @@ mdl level input_sys analysis trans_sys prop_name (
     let comment =
       match prop.Property.prop_source with
       | Property.GuaranteeOneModeActive (_, scope) -> (
-        match mdl with
-        | `IND -> None
-        | _ -> Some "contract has non-exhaustive modes"
-      )
+          match mdl with
+          | `IND -> None
+          | _ -> Some "contract has non-exhaustive modes"
+        )
       | _ -> None
     in
 
@@ -763,13 +763,13 @@ mdl level input_sys analysis trans_sys prop_name (
       (escape_xml_name prop_name) (prop_attributes_xml trans_sys prop_name)
       (Stat.get_float Stat.analysis_time)
       (function ppf -> match cex with 
-         | [] -> () 
-         | cex ->
-          (Property.length_of_cex cex) - 1 |> Format.fprintf ppf "<K>%d</K>@,")
+          | [] -> () 
+          | cex ->
+            (Property.length_of_cex cex) - 1 |> Format.fprintf ppf "<K>%d</K>@,")
       pp_print_kind_module_xml_src mdl
       (function ppf -> match comment with
-         | None -> ()
-         | Some msg -> Format.fprintf ppf " comment=\"%s\"" msg
+          | None -> ()
+          | Some msg -> Format.fprintf ppf " comment=\"%s\"" msg
       )
       answer
       (pp_print_counterexample_xml input_sys analysis trans_sys prop_name disproved)
@@ -782,7 +782,7 @@ mdl level input_sys analysis trans_sys prop_name (
         "@[<v>%a@]"
         (pp_print_list Format.pp_print_string "@,")
   )
-  
+
 
 (* Output statistics section as XML *)
 let stat_xml mdl level stats =
@@ -793,10 +793,10 @@ let stat_xml mdl level stats =
     pp_print_kind_module_xml_src mdl
     (pp_print_list
        (function ppf -> function (section, items) ->
-          Format.fprintf ppf 
-            "@[<hv 2><Section>@,<name>%s</name>@,%a@;<0 -2></Section>@]"
-            section
-            Stat.pp_print_stats_xml items)
+            Format.fprintf ppf 
+              "@[<hv 2><Section>@,<name>%s</name>@,%a@;<0 -2></Section>@]"
+              section
+              Stat.pp_print_stats_xml items)
        "@,")
     stats
 
@@ -816,42 +816,42 @@ let prop_status_xml level trans_sys prop_status =
   (* Filter unknown properties. *)
   prop_status
   |> List.filter (fun (prop,status) ->
-    not (Property.prop_status_known status)
-  ) |> (ignore_or_fprintf level)
+      not (Property.prop_status_known status)
+    ) |> (ignore_or_fprintf level)
     !log_ppf
     "@[<v>%a@]@."
     (pp_print_list 
        (fun ppf (p, s) -> 
 
-            Format.fprintf 
-              ppf
-              "@[<hv 2><Property name=\"%s\"%s>@,\
-               @[<hv 2><Answer>@,%a@;<0 -2></Answer>@]@,\
-               %a@,\
-               @;<0 -2></Property>@]"
-              (escape_xml_name p) (prop_attributes_xml trans_sys p)
-              (function ppf -> function 
-                 | Property.PropUnknown
-                 | Property.PropKTrue _ -> Format.fprintf ppf "unknown"
-                 | Property.PropInvariant _ -> Format.fprintf ppf "valid"
-                 | Property.PropFalse [] 
-                 | Property.PropFalse _ -> Format.fprintf ppf "falsifiable")
-              s
-              (function ppf -> function
-                 | Property.PropUnknown
-                 | Property.PropInvariant _
-                 | Property.PropFalse [] -> ()
-                 | Property.PropKTrue k -> 
-                   Format.fprintf 
-                     ppf 
-                     "@,@[<hv 2><TrueFor>@,%d@;<0 -2></TrueFor>@]"
-                     k
-                 | Property.PropFalse cex -> 
-                   Format.fprintf 
-                     ppf 
-                     "@,@[<hv 2><FalseAt>@,%d@;<0 -2></FalseAt>@]"
-                     ((Property.length_of_cex cex) - 1))
-              s)
+          Format.fprintf 
+            ppf
+            "@[<hv 2><Property name=\"%s\"%s>@,\
+             @[<hv 2><Answer>@,%a@;<0 -2></Answer>@]@,\
+             %a@,\
+             @;<0 -2></Property>@]"
+            (escape_xml_name p) (prop_attributes_xml trans_sys p)
+            (function ppf -> function 
+                | Property.PropUnknown
+                | Property.PropKTrue _ -> Format.fprintf ppf "unknown"
+                | Property.PropInvariant _ -> Format.fprintf ppf "valid"
+                | Property.PropFalse [] 
+                | Property.PropFalse _ -> Format.fprintf ppf "falsifiable")
+            s
+            (function ppf -> function
+                | Property.PropUnknown
+                | Property.PropInvariant _
+                | Property.PropFalse [] -> ()
+                | Property.PropKTrue k -> 
+                  Format.fprintf 
+                    ppf 
+                    "@,@[<hv 2><TrueFor>@,%d@;<0 -2></TrueFor>@]"
+                    k
+                | Property.PropFalse cex -> 
+                  Format.fprintf 
+                    ppf 
+                    "@,@[<hv 2><FalseAt>@,%d@;<0 -2></FalseAt>@]"
+                    ((Property.length_of_cex cex) - 1))
+            s)
        "@,")
 
 
@@ -863,7 +863,7 @@ let prop_status_xml level trans_sys prop_status =
 let pp_print_list_attrib pp ppf = function
   | [] -> Format.fprintf ppf " []"
   | lst -> Format.fprintf ppf
-    "@,[@[<v 1>@,%a@]@,]" (pp_print_list pp ",@,") lst
+             "@,[@[<v 1>@,%a@]@,]" (pp_print_list pp ",@,") lst
 
 
 let prop_attributes_json ppf trans_sys prop_name =
@@ -878,10 +878,10 @@ let prop_attributes_json ppf trans_sys prop_name =
 
   let rec get_attributes = function
     | Property.PropAnnot pos ->
-        let _, lnum, cnum = file_row_col_of_pos pos in
-        Format.fprintf ppf "\"line\" : %d,@,\"column\" : %d,@,\"source\" : \"PropAnnot\",@," lnum cnum
+      let _, lnum, cnum = file_row_col_of_pos pos in
+      Format.fprintf ppf "\"line\" : %d,@,\"column\" : %d,@,\"source\" : \"PropAnnot\",@," lnum cnum
     | Property.Instantiated (scope,prop) ->
-        get_attributes prop.Property.prop_source
+      get_attributes prop.Property.prop_source
     | Property.Assumption (pos, scope) -> print_attributes pos scope "Assumption"
     | Property.Guarantee (pos, scope) -> print_attributes pos scope "Guarantee"
     | Property.GuaranteeOneModeActive (pos, scope) -> print_attributes pos scope "OneModeActive"
@@ -907,27 +907,27 @@ let proved_json mdl level trans_sys k prop =
     (ignore_or_fprintf level)
       !log_ppf
       ",@.{@[<v 1>@,\
-        \"objectType\" : \"property\",@,\
-        \"name\" : \"%s\",@,\
-        %t\
-        \"runtime\" : {\
-          \"unit\" : \"sec\", \
-          \"timeout\" : false, \
-          \"value\" : %.3f\
-        },@,\
-        %t\
-        \"answer\" : {\
-          \"source\" : \"%s\", \
-          \"value\" : \"valid\"\
-        }\
-        @]@.}@.\
+       \"objectType\" : \"property\",@,\
+       \"name\" : \"%s\",@,\
+       %t\
+       \"runtime\" : {\
+       \"unit\" : \"sec\", \
+       \"timeout\" : false, \
+       \"value\" : %.3f\
+       },@,\
+       %t\
+       \"answer\" : {\
+       \"source\" : \"%s\", \
+       \"value\" : \"valid\"\
+       }\
+       @]@.}@.\
       "
       prop
       (function ppf -> prop_attributes_json ppf trans_sys prop)
       (Stat.get_float Stat.analysis_time)
       (function ppf -> match k with
-         | None -> ()
-         | Some k -> Format.fprintf ppf "\"k\" : %d,@," k)
+          | None -> ()
+          | Some k -> Format.fprintf ppf "\"k\" : %d,@," k)
       (short_name_of_kind_module mdl)
 
 
@@ -942,38 +942,38 @@ let pp_print_counterexample_json
 
   function
 
-    | [] -> ()
+  | [] -> ()
 
-    | cex ->
+  | cex ->
 
-      (
+    (
 
-        (* Get property by name *)
-        let prop =
-          TransSys.property_of_name trans_sys prop_name
-        in
+      (* Get property by name *)
+      let prop =
+        TransSys.property_of_name trans_sys prop_name
+      in
 
-        (* Slice counterexample and transitions system to property *)
-        let trans_sys', instances, cex', prop_term, input_sys' =
-          InputSystem.slice_to_abstraction_and_property
-            input_sys
-            analysis
-            trans_sys
-            cex
-            prop
-        in
+      (* Slice counterexample and transitions system to property *)
+      let trans_sys', instances, cex', prop_term, input_sys' =
+        InputSystem.slice_to_abstraction_and_property
+          input_sys
+          analysis
+          trans_sys
+          cex
+          prop
+      in
 
-        try
-          (* Output counterexample *)
-          Format.fprintf ppf
-            "\"counterExample\" :%a"
-            (InputSystem.pp_print_path_json input_sys' trans_sys' instances disproved)
-            (Model.path_of_list cex')
-        with TimeoutWall -> (
+      try
+        (* Output counterexample *)
+        Format.fprintf ppf
+          "\"counterExample\" :%a"
+          (InputSystem.pp_print_path_json input_sys' trans_sys' instances disproved)
+          (Model.path_of_list cex')
+      with TimeoutWall -> (
           Format.fprintf ppf " []@.}@.";
           raise TimeoutWall
         )
-      )
+    )
 
 
 (* Output disproved property as JSON *)
@@ -998,33 +998,33 @@ let cex_json mdl level input_sys analysis trans_sys prop cex disproved =
     (ignore_or_fprintf level)
       !log_ppf
       ",@.{@[<v 1>@,\
-        \"objectType\" : \"property\",@,\
-        \"name\" : \"%s\",@,\
-        %t\
-        \"runtime\" : {\
-          \"unit\" : \"sec\", \
-          \"timeout\" : false, \
-          \"value\" : %.3f\
-        },@,\
-        %t\
-        \"answer\" : {\
-          \"source\" : \"%s\", \
-          \"value\" : \"%s\"\
-        },@,\
-        %a\
-        @]@.}@.\
+       \"objectType\" : \"property\",@,\
+       \"name\" : \"%s\",@,\
+       %t\
+       \"runtime\" : {\
+       \"unit\" : \"sec\", \
+       \"timeout\" : false, \
+       \"value\" : %.3f\
+       },@,\
+       %t\
+       \"answer\" : {\
+       \"source\" : \"%s\", \
+       \"value\" : \"%s\"\
+       },@,\
+       %a\
+       @]@.}@.\
       "
       prop
       (function ppf -> prop_attributes_json ppf trans_sys prop)
       (Stat.get_float Stat.analysis_time)
       (function ppf -> match cex with
-         | [] -> ()
-         | cex -> let k = (Property.length_of_cex cex) - 1 in
-           Format.fprintf ppf "\"k\" : %d,@," k)
+          | [] -> ()
+          | cex -> let k = (Property.length_of_cex cex) - 1 in
+            Format.fprintf ppf "\"k\" : %d,@," k)
       (short_name_of_kind_module mdl) answer
       (pp_print_counterexample_json input_sys analysis trans_sys prop disproved)
       cex
-      ;
+    ;
 
     (* Output warning if division by zero happened in simplification. *)
     if Simplify.has_division_by_zero_happened () then
@@ -1041,9 +1041,9 @@ let execution_path_json level input_sys analysis trans_sys path =
   (ignore_or_fprintf level)
     !log_ppf
     ",@.{@[<v 1>@,\
-        \"objectType\" : \"execution\",@,\
-        \"trace\" :@,[@[<v 1>%a@]@,]\
-       @]@.}@.\
+     \"objectType\" : \"execution\",@,\
+     \"trace\" :@,[@[<v 1>%a@]@,]\
+     @]@.}@.\
     "
     (InputSystem.pp_print_path_json input_sys trans_sys [] true)
     (Model.path_of_list path)
@@ -1054,9 +1054,9 @@ let prop_status_json level trans_sys prop_status =
 
   (* Filter unknown properties. *)
   let unknown_props = prop_status
-    |> List.filter (fun (prop,status) ->
-      not (Property.prop_status_known status)
-    )
+                      |> List.filter (fun (prop,status) ->
+                          not (Property.prop_status_known status)
+                        )
   in
 
   if unknown_props <> [] then (
@@ -1065,28 +1065,28 @@ let prop_status_json level trans_sys prop_status =
       "@[<v>%a@]@."
       (pp_print_list
          (fun ppf (p, s) ->
-           Format.fprintf
-             ppf
-             ",@.{@[<v 1>@,\
+            Format.fprintf
+              ppf
+              ",@.{@[<v 1>@,\
                \"objectType\" : \"property\",@,\
                \"name\" : \"%s\",@,\
                %t\
                %t\
                \"answer\" : {\
-                 \"value\" : \"unknown\"\
+               \"value\" : \"unknown\"\
                }\
                @]@.}\
-             "
-             p
-             (function ppf -> prop_attributes_json ppf trans_sys p)
-             (function ppf -> match s with
-                | Property.PropKTrue k ->
-                  Format.fprintf ppf "\"trueFor\" : %d,@," k
-                | _ -> ()
-             )
+              "
+              p
+              (function ppf -> prop_attributes_json ppf trans_sys p)
+              (function ppf -> match s with
+                  | Property.PropKTrue k ->
+                    Format.fprintf ppf "\"trueFor\" : %d,@," k
+                  | _ -> ()
+              )
          )
-       "@,")
-       unknown_props
+         "@,")
+      unknown_props
   )
 
 
@@ -1096,21 +1096,21 @@ let stat_json mdl level stats =
   (ignore_or_fprintf level)
     !log_ppf
     ",@.{@[<v 1>@,\
-        \"objectType\" : \"stat\",@,\
-        \"source\" : \"%s\",@,\
-        \"sections\" :%a\
-      @]@.}@.\
+     \"objectType\" : \"stat\",@,\
+     \"source\" : \"%s\",@,\
+     \"sections\" :%a\
+     @]@.}@.\
     "
     (short_name_of_kind_module mdl)
     (pp_print_list_attrib (fun ppf (section, items) ->
-      Format.fprintf ppf
-        "{@[<v 1>@,\
-         \"name\" : \"%s\",@,\
-         \"items\" :%a\
-         @]@,}\
-        "
-        section Stat.pp_print_stats_json items
-      )
+         Format.fprintf ppf
+           "{@[<v 1>@,\
+            \"name\" : \"%s\",@,\
+            \"items\" :%a\
+            @]@,}\
+           "
+           section Stat.pp_print_stats_json items
+       )
     )
     stats
 
@@ -1121,10 +1121,10 @@ let progress_json mdl level k =
   (ignore_or_fprintf level)
     !log_ppf
     ",@.{@[<v 1>@,\
-        \"objectType\" : \"progress\",@,\
-        \"source\" : \"%s\",@,\
-        \"k\" : \"%d\"\
-      @]@.}@.\
+     \"objectType\" : \"progress\",@,\
+     \"source\" : \"%s\",@,\
+     \"k\" : \"%d\"\
+     @]@.}@.\
     "
     (short_name_of_kind_module mdl) k
 
@@ -1154,9 +1154,9 @@ let printf_relay mdl level fmt =
   Format.kfprintf 
     (function ppf -> 
 
-      let s = Format.flush_str_formatter () in
+       let s = Format.flush_str_formatter () in
 
-      if output_on_level level then log mdl level s)
+       if output_on_level level then log mdl level s)
 
     Format.str_formatter
     fmt
@@ -1177,10 +1177,10 @@ include ELog
 (* Log a message with source and log level *)
 let log_proved mdl level trans_sys k prop =
   match get_log_format () with 
-    | F_pt -> proved_pt mdl level trans_sys k prop
-    | F_xml -> proved_xml mdl level trans_sys k prop
-    | F_json -> proved_json mdl level trans_sys k prop
-    | F_relay -> ()
+  | F_pt -> proved_pt mdl level trans_sys k prop
+  | F_xml -> proved_xml mdl level trans_sys k prop
+  | F_json -> proved_json mdl level trans_sys k prop
+  | F_relay -> ()
 
 (* Warning issued if model reconstruction triggers a division by zero. *)
 let div_by_zero_text = "division by zero detected, model may be inconsistent"
@@ -1209,39 +1209,39 @@ let log_step_cex mdl level input_sys analysis trans_sys prop cex =
 let log_execution_path mdl level input_sys analysis trans_sys path =
 
   (match get_log_format () with 
-    | F_pt -> execution_path_pt level input_sys analysis trans_sys path
-    | F_xml -> execution_path_xml level input_sys analysis trans_sys path 
-    | F_json -> execution_path_json level input_sys analysis trans_sys path
-    | F_relay -> ())
+   | F_pt -> execution_path_pt level input_sys analysis trans_sys path
+   | F_xml -> execution_path_xml level input_sys analysis trans_sys path 
+   | F_json -> execution_path_json level input_sys analysis trans_sys path
+   | F_relay -> ())
 
 
 (* Output summary of status of properties *)
 let log_prop_status level trans_sys prop_status =
   match get_log_format () with 
-    | F_pt -> prop_status_pt level prop_status
-    | F_xml -> prop_status_xml level trans_sys prop_status
-    | F_json -> prop_status_json level trans_sys prop_status
-    | F_relay -> ()
+  | F_pt -> prop_status_pt level prop_status
+  | F_xml -> prop_status_xml level trans_sys prop_status
+  | F_json -> prop_status_json level trans_sys prop_status
+  | F_relay -> ()
 
 
 (* Output statistics of a section of a source *)
 let log_stat mdl level stats =
 
   match get_log_format () with 
-    | F_pt -> stat_pt mdl level stats
-    | F_xml -> stat_xml mdl level stats
-    | F_json -> stat_json mdl level stats
-    | F_relay -> ()
-  
+  | F_pt -> stat_pt mdl level stats
+  | F_xml -> stat_xml mdl level stats
+  | F_json -> stat_json mdl level stats
+  | F_relay -> ()
+
 
 (* Output progress indicator of a source *)
 let log_progress mdl level k = 
   match get_log_format () with 
-    | F_pt -> ()
-    | F_xml -> progress_xml mdl level k
-    | F_json -> progress_json mdl level k
-    | F_relay -> ()
-  
+  | F_pt -> ()
+  | F_xml -> progress_xml mdl level k
+  | F_json -> progress_json mdl level k
+  | F_relay -> ()
+
 
 (* Logs the end of a run. *)
 let log_run_end results =
@@ -1251,17 +1251,17 @@ let log_run_end results =
     if Flags.Contracts.compositional () then
       Format.fprintf !log_ppf
         "@{<b>%a@}@{<b>Analysis breakdown, total runtime %.3fs seconds@}:@   \
-          @[<v>%a@]@.@.\
+         @[<v>%a@]@.@.\
         "
         Pretty.print_line ()
         (Stat.get_float Stat.total_time)
         (pp_print_list Analysis.pp_print_result_quiet "@ ") (
-          results
-          |> if Flags.modular () then List.filter (
+        results
+        |> if Flags.modular () then List.filter (
             fun { Analysis.sys } ->
               (TransSys.get_split_properties sys) <> ([], [], [])
           ) else identity
-        )
+      )
 
   | F_xml -> ()
 
@@ -1272,16 +1272,16 @@ let log_run_end results =
 
 let split_abstract_and_concrete_systems sys info =
   Scope.Map.fold (fun sys is_abstract (a,c) ->
-    if is_abstract then sys :: a, c else a, sys :: c
-  ) info.Analysis.abstraction_map ([],[])
+      if is_abstract then sys :: a, c else a, sys :: c
+    ) info.Analysis.abstraction_map ([],[])
 
 
 let number_of_subsystem_assumptions info =
   info.Analysis.assumptions
   |> Analysis.assumptions_fold (fun map key _ ->
-    let cpt = try (Scope.Map.find key map) + 1 with Not_found -> 1 in
-    Scope.Map.add key cpt map
-  ) Scope.Map.empty
+      let cpt = try (Scope.Map.find key map) + 1 with Not_found -> 1 in
+      Scope.Map.add key cpt map
+    ) Scope.Map.empty
   |> Scope.Map.bindings
 
 
@@ -1295,9 +1295,9 @@ let log_analysis_start sys param =
       Format.fprintf !log_ppf "\
         @.@.%a@{<b>Analyzing @{<blue>%a@}@}@   with %a\
       @.@."
-      Pretty.print_double_line ()
-      Scope.pp_print_scope info.Analysis.top
-      (Analysis.pp_print_param false) param
+        Pretty.print_double_line ()
+        Scope.pp_print_scope info.Analysis.top
+        (Analysis.pp_print_param false) param
 
   | F_xml ->
     (* Splitting abstract and concrete systems. *)
@@ -1306,20 +1306,20 @@ let log_analysis_start sys param =
     let assumption_count = number_of_subsystem_assumptions info in
     (* Opening [analysis] tag and printing info. *)
     Format.fprintf !log_ppf "@.@.\
-        <AnalysisStart \
-          top=\"%a\" \
-          concrete=\"%a\" \
-          abstract=\"%a\" \
-          assumptions=\"%a\"\
-        />@.@.\
-      "
+                             <AnalysisStart \
+                             top=\"%a\" \
+                             concrete=\"%a\" \
+                             abstract=\"%a\" \
+                             assumptions=\"%a\"\
+                             />@.@.\
+                            "
       Scope.pp_print_scope info.Analysis.top
       (pp_print_list Scope.pp_print_scope ",") concrete
       (pp_print_list Scope.pp_print_scope ",") abstract
       (pp_print_list (fun fmt (scope, cpt) ->
-          Format.fprintf fmt "(%a,%d)" Scope.pp_print_scope scope cpt
-        )
-        ","
+           Format.fprintf fmt "(%a,%d)" Scope.pp_print_scope scope cpt
+         )
+          ","
       ) assumption_count ;
     analysis_start_not_closed := true
 
@@ -1345,8 +1345,8 @@ let log_analysis_start sys param =
       (pp_print_list_attrib pp_print_scope_str) concrete
       (pp_print_list_attrib pp_print_scope_str) abstract
       (pp_print_list_attrib (fun fmt (scope, cpt) ->
-          Format.fprintf fmt "[%a,%d]" pp_print_scope_str scope cpt
-        )
+           Format.fprintf fmt "[%a,%d]" pp_print_scope_str scope cpt
+         )
       ) assumption_count;
     analysis_start_not_closed := true
 
@@ -1384,9 +1384,9 @@ let log_post_analysis_start name title =
   | F_json ->
     Format.fprintf !log_ppf
       ",@.{@[<v 1>@,\
-        \"objectType\" : \"postAnalysisStart\",@,\
-        \"name\" : \"%s\"\
-        @]@.}@.\
+       \"objectType\" : \"postAnalysisStart\",@,\
+       \"name\" : \"%s\"\
+       @]@.}@.\
       "
       name
   | F_relay -> failwith "can only be called by supervisor"
@@ -1405,16 +1405,16 @@ let log_post_analysis_end () =
 (* Terminate log output *)
 let terminate_log () = 
   match get_log_format () with 
-    | F_pt -> Format.print_flush ()
-    | F_xml ->
-      log_analysis_end () ;
-      print_xml_trailer () ;
-      Format.print_flush ()
-    | F_json ->
-      log_analysis_end () ;
-      Format.fprintf !log_ppf "]@.";
-      Format.print_flush ()
-    | F_relay -> ()
+  | F_pt -> Format.print_flush ()
+  | F_xml ->
+    log_analysis_end () ;
+    print_xml_trailer () ;
+    Format.print_flush ()
+  | F_json ->
+    log_analysis_end () ;
+    Format.fprintf !log_ppf "]@.";
+    Format.print_flush ()
+  | F_relay -> ()
 
 (** Logs a timeout. *)
 let log_timeout b =
@@ -1472,25 +1472,25 @@ let invariant scope term cert two_state =
 
 (* Broadcast a property status *)
 let prop_status status input_sys analysis trans_sys prop =
-  
+
   (* Update time in case we are not running in parallel mode *)
   Stat.update_time Stat.total_time ;
   Stat.update_time Stat.analysis_time ;
-  
+
   let mdl = get_module () in
 
   (match status with
-    | Property.PropInvariant _ -> log_proved mdl L_warn trans_sys None prop
-    | Property.PropFalse cex -> 
-      log_cex true mdl L_warn input_sys analysis trans_sys prop cex
+   | Property.PropInvariant _ -> log_proved mdl L_warn trans_sys None prop
+   | Property.PropFalse cex -> 
+     log_cex true mdl L_warn input_sys analysis trans_sys prop cex
 
-    | _ -> ());
+   | _ -> ());
 
   (* Update status of property in transition system *)
   TransSys.set_prop_status trans_sys prop status;
 
   try
-    
+
     (* Send status message *)
     EventMessaging.send_relay_message (PropStatus (prop, status))
 
@@ -1501,7 +1501,7 @@ let prop_status status input_sys analysis trans_sys prop =
 
 (* Broadcast a step cex *)
 let step_cex input_sys analysis trans_sys prop cex =
-  
+
   (* Update time in case we are not running in parallel mode *)
   Stat.update_time Stat.total_time ;
   Stat.update_time Stat.analysis_time ;
@@ -1509,7 +1509,7 @@ let step_cex input_sys analysis trans_sys prop cex =
   log_cex true (get_module ()) L_warn input_sys analysis trans_sys prop cex ;
 
   try
-    
+
     (* Send status message *)
     EventMessaging.send_relay_message (StepCex (prop, cex))
 
@@ -1523,7 +1523,7 @@ let execution_path trans_sys path =
   (* Update time in case we are not running in parallel mode *)
   Stat.update_time Stat.total_time ;
   Stat.update_time Stat.analysis_time ;
-  
+
   let mdl = get_module () in
 
   log_execution_path mdl L_warn trans_sys path
@@ -1535,7 +1535,7 @@ let progress k =
   (* Update time in case we are not running in parallel mode *)
   Stat.update_time Stat.total_time ;
   Stat.update_time Stat.analysis_time ;
-  
+
   let mdl = get_module () in
 
   log_progress mdl L_info k;
@@ -1544,7 +1544,7 @@ let progress k =
 
     (* Send progress message *)
     EventMessaging.send_output_message
-         (EventMessaging.Progress k)
+      (EventMessaging.Progress k)
 
   (* Don't fail if not initialized *) 
   with Messaging.NotInitialized -> ()
@@ -1555,7 +1555,7 @@ let stat stats =
 
   Stat.update_time Stat.total_time ;
   Stat.update_time Stat.analysis_time ;
-  
+
   let mdl = get_module () in
 
   log_stat mdl L_info stats;
@@ -1568,7 +1568,7 @@ let stat stats =
 
   (* Don't fail if not initialized *) 
   with Messaging.NotInitialized -> ()
-  
+
 
 (* Broadcast termination message *)
 let terminate () = 
@@ -1595,67 +1595,67 @@ let recv () =
 
   Stat.update_time Stat.total_time ;
   Stat.update_time Stat.analysis_time ;
-  
+
   try
 
     List.rev
       (List.fold_left 
          (function accum -> 
-           (function 
+            (function 
 
-             (* Terminate on TERM message *)
-             | (_, EventMessaging.ControlMessage EventMessaging.Terminate) -> 
+              (* Terminate on TERM message *)
+              | (_, EventMessaging.ControlMessage EventMessaging.Terminate) -> 
 
-               raise Terminate
+                raise Terminate
 
-             (* Drop other control messages *)
-             | _, EventMessaging.ControlMessage _ -> accum 
+              (* Drop other control messages *)
+              | _, EventMessaging.ControlMessage _ -> accum 
 
-             (* Output log message *)
-             | mdl, 
-               EventMessaging.OutputMessage (EventMessaging.Log (lvl, msg)) ->
+              (* Output log message *)
+              | mdl, 
+                EventMessaging.OutputMessage (EventMessaging.Log (lvl, msg)) ->
 
-               let lines = Str.(split (regexp "\n") msg) in
+                let lines = Str.(split (regexp "\n") msg) in
 
-               log (log_level_of_int lvl) "@[<hov>%a@]" (
-                pp_print_list Format.pp_print_string "@ "
-               ) lines ;
+                log (log_level_of_int lvl) "@[<hov>%a@]" (
+                  pp_print_list Format.pp_print_string "@ "
+                ) lines ;
 
-               (* No relay message *)
-               accum
+                (* No relay message *)
+                accum
 
-             (* Output statistics *)
-             | mdl, EventMessaging.OutputMessage (EventMessaging.Stat stats) -> 
+              (* Output statistics *)
+              | mdl, EventMessaging.OutputMessage (EventMessaging.Stat stats) -> 
 
-               (* Unmarshal statistics *)
-               let stats : (string * Stat.stat_item list) list = 
-                 Marshal.from_string stats 0
-               in
+                (* Unmarshal statistics *)
+                let stats : (string * Stat.stat_item list) list = 
+                  Marshal.from_string stats 0
+                in
 
-               (* Output on log levels info and below *)
-               log_stat mdl L_debug stats;
+                (* Output on log levels info and below *)
+                log_stat mdl L_debug stats;
 
-               (* Store last received statistics *)
-               last_stats := MdlMap.add mdl stats !last_stats;
+                (* Store last received statistics *)
+                last_stats := MdlMap.add mdl stats !last_stats;
 
-               (* No relay message *)
-               accum
+                (* No relay message *)
+                accum
 
-             (* Output progress *)
-             | mdl, EventMessaging.OutputMessage (EventMessaging.Progress k) -> 
+              (* Output progress *)
+              | mdl, EventMessaging.OutputMessage (EventMessaging.Progress k) -> 
 
-               log_progress mdl L_info k;
+                log_progress mdl L_info k;
 
-               (* No relay message *)
-               accum
+                (* No relay message *)
+                accum
 
-             (* Return event message *)
-             | mdl, EventMessaging.RelayMessage (_, msg) ->
+              (* Return event message *)
+              | mdl, EventMessaging.RelayMessage (_, msg) ->
 
-               (* Return relay message *)
-               (mdl, msg) :: accum
+                (* Return relay message *)
+                (mdl, msg) :: accum
 
-           )
+            )
          )
          []
          (EventMessaging.recv ()))
@@ -1672,8 +1672,8 @@ let update_child_processes_list new_process_list =
       new_process_list
   with Messaging.NotInitialized -> ()
 
-let purge_im (ctx, _) =
-  try EventMessaging.purge_im_mailbox ctx
+let purge_im (sockets, _) =
+  try EventMessaging.purge_im_mailbox sockets
   with Messaging.NotInitialized -> ()
 
 (* Terminates if a termination message was received. Does NOT modified
@@ -1689,7 +1689,7 @@ let update_trans_sys_sub input_sys analysis trans_sys events =
     let sets =
       ( try SMap.find scope map with Not_found -> TSet.empty, TSet.empty )
       |> fun (os, ts) ->
-        if two_state then os, TSet.add term ts else TSet.add term os, ts
+      if two_state then os, TSet.add term ts else TSet.add term os, ts
     in
     SMap.add scope sets map
   in
@@ -1716,7 +1716,7 @@ let update_trans_sys_sub input_sys analysis trans_sys events =
               accum
         ) tl
       in
-      
+
       let invars =
         (* Add invariant to transtion system *)
         TransSys.add_scoped_invariant trans_sys s t cert two_state
@@ -1754,7 +1754,7 @@ let update_trans_sys_sub input_sys analysis trans_sys events =
 
       (* Output proved property *)
       log_proved m L_warn trans_sys None p;
-          
+
       (* Change property status in transition system *)
       TransSys.set_prop_invariant trans_sys p cert;
 
