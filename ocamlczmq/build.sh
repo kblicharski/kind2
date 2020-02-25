@@ -14,7 +14,7 @@ pushd czmq
 export CFLAGS=-I"$(pwd)/../include"
 export LDFLAGS=-L"$(pwd)/../lib"
 export PKG_CONFIG_PATH="$(pwd)/../lib/pkgconfig"
-./configure --prefix="$(pwd)/.." --enable-drafts="no" --with-uuid --with-libzmq="$(pwd)/.."
+./configure --prefix="$(pwd)/.." --enable-drafts="no" ---with-uuid=no --with-libzmq="$(pwd)/.."
 make -j$NBPROCS
 make -j$NBPROCS install
 popd
