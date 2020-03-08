@@ -59,7 +59,7 @@ val log_disproved : Lib.kind_module -> Lib.log_level -> 'a InputSystem.t -> Anal
     Should only be used by the invariant manager, other modules must use
     {!prop_status} to send it as a message. *)
 val log_proved : Lib.kind_module -> Lib.log_level -> TransSys.t -> int option -> string -> unit
- 
+
 (*
 (** Log a counterexample for some properties
 
@@ -99,8 +99,8 @@ val log_analysis_start : TransSys.t -> Analysis.param -> unit
 val log_analysis_end : Analysis.result -> unit
 
 (** Logs the start of a post-analysis treatment. Arguments:
-* name of the treatment (concise, for XML)
-* title of the treatment (verbose, for pt) *)
+ * name of the treatment (concise, for XML)
+ * title of the treatment (verbose, for pt) *)
 val log_post_analysis_start : string -> string -> unit
 
 (** Logs the end of a post-analysis treatment. *)
@@ -220,8 +220,8 @@ val run_im :
   messaging_setup -> (int * Lib.kind_module) list -> (exn -> unit) -> unit 
 
 (** Purge the invariant manager mailbox.
-  Should be called before calling update_child_processes_list
-  in order to get rid of messages from the previous analysis. *)
+    Should be called before calling update_child_processes_list
+    in order to get rid of messages from the previous analysis. *)
 val purge_im : messaging_setup -> unit
 
 (** Start messaging for another process *)

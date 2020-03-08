@@ -77,8 +77,8 @@ sig
   (** Thread *)
   type thread
 
-  (** Create a messaging context and bind ports for the invariant
-      manager. Return a pair of pub socket and pull socket and pair of
+  (** Bind ports for the invariant manager. 
+      Return a pair of pub socket and pull socket and pair of
       addresses of pub and pull sockets for workers to connect to. 
 
       Call this function before forking the processes, the first
@@ -87,8 +87,7 @@ sig
       return argument. *)
   val init_im : unit -> (socket * socket) * (string * string)
 
-  (** Create a messaging context and bind given ports for a worker
-      process. Return a pair of sub and push sockets. *)
+  (** Bind given ports for a worker process. Return a pair of sub and push sockets. *)
   val init_worker : Lib.kind_module -> string -> string -> socket * socket 
 
   (** Start the background thread for the invariant manager, using the

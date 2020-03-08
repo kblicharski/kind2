@@ -281,24 +281,24 @@ type messaging_setup =
 
 type mthread = EventMessaging.thread
 
-(* Create contexts and bind ports for all processes *)
+(* Create sockets and bind ports for all processes *)
 let setup () = 
 
-  (* Create context for invariant manager *)
-  let im_context, (b, m) = EventMessaging.init_im () in
+  (* Create sockets for invariant manager *)
+  let (pub_sock, pull_sock), (b, m) = EventMessaging.init_im () in
 
-  (* Return contexts *)
-  (im_context, (b, m))
+  (* Return sockets *)
+  ((pub_sock, pull_sock), (b, m))
 
 
 (* Start messaging for a process *)
 let run_process proc (_, (bcast_port, push_port)) on_exit = 
 
   (* Initialize messaging for process *)
-  let sockets = EventMessaging.init_worker proc bcast_port push_port in
+  let (sub_sock, push_sock) = EventMessaging.init_worker proc bcast_port push_port in
 
   (* Run messaging for process *)
-  EventMessaging.run_worker sockets proc on_exit
+  EventMessaging.run_worker (sub_sock, push_sock) proc on_exit
 
 
 (* Start messaging for invariant manager *)

@@ -70,7 +70,7 @@ void caml_zmq_raise_if(int condition) {
 
 // a socket type containing a zsock pointer
  typedef struct _socket_st {
-    void *socket;
+    zsock_t *socket;
 } socket_st;
 
 #define CAML_CZMQ_zsock_val(v) (socket_st *) Data_custom_val(v)
@@ -110,7 +110,7 @@ caml_zsock_new(value type_val)
 
     int type = Int_val(type_val);
     // create socket
-    void *socket = zsock_new ( type );
+    zsock_t *socket = zsock_new(type);
     assert (socket);
     // return structure of zsock pointer
     socket_st socket_record;
