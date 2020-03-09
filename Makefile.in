@@ -30,10 +30,7 @@ export
 
 all: @PACKAGE_NAME@
 
-.PHONY: ocamlczmq @PACKAGE_NAME@ @PACKAGE_NAME@-prof @PACKAGE_NAME@-top @PACKAGE_NAME@-doc 
-
-ocamlczmq: 
-	cd ocamlczmq && ./build.sh
+.PHONY: @PACKAGE_NAME@ @PACKAGE_NAME@-prof @PACKAGE_NAME@-top @PACKAGE_NAME@-doc 
 
 @PACKAGE_NAME@: 
 	make -C src
@@ -76,7 +73,7 @@ lfsc-extractor: bin/cvc4_lfsc_check
 	mkdir -p $(LOCAL_DOCDIR)/include
 	cp -Rf src/doc/include/* $(LOCAL_DOCDIR)/include
 
-.PHONY: install clean-@PACKAGE_NAME@ clean-ocamlczmq clean test doc
+.PHONY: install clean-@PACKAGE_NAME@ clean test doc
 
 install: 
 	mkdir -p ${bindir}
@@ -98,11 +95,7 @@ doc:
 clean-@PACKAGE_NAME@:
 	make -C src clean
 
-clean-ocamlczmq:
-	make -C ocamlczmq clean
-	rm -f $(LOCAL_ALLDOCDIR)/*.pdf
-
-clean: clean-@PACKAGE_NAME@ clean-ocamlczmq doc-clean
+clean: clean-@PACKAGE_NAME@ doc-clean
 
 
 # Remake this Makefile if configuration has changed 

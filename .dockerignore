@@ -42,7 +42,3 @@ config.status
 
 # Generated configure.
 configure
-
-# Generated ocamlczmq.
-ocamlczmq/{include,lib}
-ocamlczmq/src/.libs
