@@ -99,8 +99,6 @@ By default, ``kind2`` will be installed into ``/usr/local/bin``\ , an operation 
 
 to install the Kind 2 binary into ``<path>/bin``. You can omit the option to accept the default path of ``/usr/local/bin``. 
 
-The ZeroMQ and CZMQ libraries, and OCaml bindings to CZMQ are distributed with Kind 2. The build script will compile and link to those, ignoring any versions that are installed on your system. 
-
 If it has been successful, call 
 
 .. code-block:: none
@@ -108,7 +106,7 @@ If it has been successful, call
    make install
 
 
-to install the Kind 2 binary into the chosen location. If you need to pass options to the configure scripts of any of ZeroMQ, CZMQ, the OCaml bindings or Kind 2, add these to the ``build.sh`` call. Use ``./configure --help`` after ``autogen.sh`` to see all available options.
+to install the Kind 2 binary into the chosen location.
 
 You need a supported SMT solver on your path when running ``kind2``.
 

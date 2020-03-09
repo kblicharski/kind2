@@ -5,8 +5,6 @@ open Ocamlbuild_pack;;
 dispatch begin function
 
   | After_rules ->
-    ocaml_lib ~extern:true ~dir:"../../ocamlczmq/lib" "ZMQ";
-
     (* Intro if tagged with_intro *)
     pflag_and_dep ["doc"] "with_intro" (fun f -> S [A "-intro"; P f]);
 
