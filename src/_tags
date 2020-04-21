@@ -17,13 +17,13 @@ true: -traverse, annot, bin_annot, color(always)
 <certif>: include
 <doc>: include
 
-# Use Unix, Str, Zmq and Thread modules  
-<**/*.native>: use_nums,use_unix,use_str,use_Zmq,thread
-<**/*.byte>: use_nums,use_unix,use_str,use_Zmq,thread
+# Use Unix, Str, zmq and Thread modules  
+<**/*.native>: use_nums,use_unix,use_str,use_zmq,thread
+<**/*.byte>: use_nums,use_unix,use_str,use_zmq,thread
 <**/*.top>: debug,use_nums,use_unix,use_str,thread
 
-# Source files that use the Thread and Zmq modules
-<messaging.ml>: thread,use_Zmq
+# Source files that use the Thread and zmq modules
+<messaging.ml>: thread,use_zmq
 <messaging.mli>: thread
 <utils/lib.ml>: thread
 

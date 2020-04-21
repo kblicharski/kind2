@@ -1,7 +1,7 @@
-# Use Unix, and Zmq 
-<*.native>: annot,use_unix,use_Zmq
-<*.byte>: use_unix,use_Zmq
-<*.top>: debug,use_unixuse_Zmq
+# Use Unix, and zmq 
+<*.native>: annot,use_unix,use_zmq
+<*.byte>: use_unix,use_zmq
+<*.top>: debug,use_unix,use_zmq
 
-# All source files use Zmq 
-<*.ml>: use_Zmq
+# All source files use zmq 
+<*.ml>: use_zmq
